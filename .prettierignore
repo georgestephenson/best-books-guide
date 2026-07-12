@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+package-lock.json
+ideas
+.claude
+# Design docs are hand-formatted (tables, alignment) — don't let Prettier reflow them
+**/*.md

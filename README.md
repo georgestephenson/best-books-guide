@@ -19,3 +19,18 @@ My idea was to spin up a full stack project with the suggested tech stack, and t
 - **Design docs**: [docs/](docs/README.md) — product, architecture, data model, API, security, infrastructure, operations, delivery plan
 - **Decisions**: [docs/adr/](docs/adr/) — why each significant choice was made
 - **Tasks**: [TODO.md](TODO.md) · **Working agreements**: [CLAUDE.md](CLAUDE.md) · **Conventions**: [CONTRIBUTING.md](CONTRIBUTING.md)
+
+## Development
+
+Prerequisites: **Node 24** (`nvm use` reads [.nvmrc](.nvmrc)) and npm 11. This is an npm-workspaces monorepo — `apps/api` (Fastify), `apps/web` (React/Vite), `packages/shared` (contract types).
+
+```bash
+npm install          # install all workspaces
+npm run dev          # api on :3000 + web on :5173 (web proxies /api and /healthz to the api)
+npm test             # Vitest across the monorepo, with coverage gates
+npm run typecheck    # tsc project references + web typecheck
+npm run lint         # ESLint 9 (flat config)
+npm run build        # build shared → api → web
+```
+
+Currently the **M1 walking skeleton**: the web page reports API health via the shared contract. `curl localhost:3000/healthz` → `{"status":"ok",...}`. Features arrive from M2 onward — see the [delivery plan](docs/08-delivery-plan.md).
