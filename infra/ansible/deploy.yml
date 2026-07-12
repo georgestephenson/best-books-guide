@@ -1,0 +1,83 @@
+---
+# Ship one release: fetch the CI-built tarball from S3, swap the `current`
+# symlink, restart, and health-check. Run with -e release_sha=<git-sha>.
+- name: Deploy a release
+  hosts: all
+  become: true
+  tasks:
+    - name: Require release_sha
+      ansible.builtin.assert:
+        that:
+          - release_sha is defined
+          - release_sha | length > 0
+        fail_msg: "Pass the release: -e release_sha=<git-sha>"
+
+    - name: Create the release directory
+      ansible.builtin.file:
+        path: "{{ app_dir }}/releases/{{ release_sha }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0755"
+
+    - name: Fetch the release tarball from S3 (via the instance role)
+      ansible.builtin.command:
+        cmd: >-
+          aws s3 cp
+          s3://{{ releases_bucket }}/release-{{ release_sha }}.tar.gz
+          /tmp/release-{{ release_sha }}.tar.gz
+          --region {{ aws_region }}
+        creates: "/tmp/release-{{ release_sha }}.tar.gz"
+
+    - name: Unpack the release
+      ansible.builtin.unarchive:
+        src: "/tmp/release-{{ release_sha }}.tar.gz"
+        dest: "{{ app_dir }}/releases/{{ release_sha }}"
+        remote_src: true
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        creates: "{{ app_dir }}/releases/{{ release_sha }}/apps/api/dist/main.js"
+
+    - name: Stamp APP_VERSION with the release SHA
+      ansible.builtin.lineinfile:
+        path: "{{ app_dir }}/shared/.env"
+        regexp: '^APP_VERSION='
+        line: "APP_VERSION={{ release_sha }}"
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0640"
+
+    - name: Point 'current' at the new release
+      ansible.builtin.file:
+        src: "{{ app_dir }}/releases/{{ release_sha }}"
+        dest: "{{ app_dir }}/current"
+        state: link
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+      notify: Restart bestbooks-api
+
+    - name: Restart before the health check
+      ansible.builtin.meta: flush_handlers
+
+    - name: Wait for the app to report healthy
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ app_port }}/healthz"
+        status_code: 200
+      register: health
+      retries: 10
+      delay: 3
+      until: health.status == 200
+
+    - name: Prune old releases (keep the newest {{ keep_releases }})
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          ls -1dt {{ app_dir }}/releases/*/ | tail -n +{{ keep_releases + 1 }} | xargs -r rm -rf
+        executable: /bin/bash
+      changed_when: true
+
+  handlers:
+    - name: Restart bestbooks-api
+      ansible.builtin.systemd_service:
+        name: bestbooks-api
+        state: restarted

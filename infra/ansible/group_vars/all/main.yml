@@ -1,0 +1,26 @@
+---
+# Non-secret host/app configuration. Secrets live in vault.yml (see vault.yml.example).
+
+domain_name: bestbooks.guide
+admin_email: change-me@example.com # certbot registration + Monit alert recipient — SET THIS
+
+app_name: bestbooks
+app_user: bestbooks
+app_group: bestbooks
+app_dir: /srv/bestbooks
+app_port: 3000
+app_log_level: info
+keep_releases: 5
+
+node_major: "24"
+
+aws_region: eu-west-2
+releases_bucket: bestbooks-prod-releases
+media_bucket: bestbooks-prod-media
+
+ses_smtp_endpoint: "email-smtp.{{ aws_region }}.amazonaws.com"
+ses_smtp_port: 587
+
+# Secrets, pulled from the Ansible Vault
+monit_smtp_username: "{{ vault_monit_smtp_username }}"
+monit_smtp_password: "{{ vault_monit_smtp_password }}"

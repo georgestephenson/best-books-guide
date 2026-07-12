@@ -1,0 +1,27 @@
+## Managed by Ansible (roles/monit)
+set daemon 60
+  with start delay 30
+
+set log syslog
+
+set mailserver {{ ses_smtp_endpoint }} port {{ ses_smtp_port }}
+  username "{{ monit_smtp_username }}" password "{{ monit_smtp_password }}"
+  using tlsv1.2
+
+set mail-format {
+  from: monit@{{ domain_name }}
+  subject: [monit] $SERVICE $EVENT on {{ inventory_hostname }}
+  message: $DESCRIPTION
+           Service: $SERVICE
+           Date:    $DATE
+           Host:    $HOST
+}
+
+set alert {{ admin_email }}
+
+# Localhost-only control UI; reach it via an SSH tunnel (docs/07).
+set httpd port 2812
+  use address localhost
+  allow localhost
+
+include /etc/monit/conf.d/*

@@ -1,0 +1,30 @@
+# Managed by Ansible (roles/app)
+[Unit]
+Description=Best Books Guide API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ app_user }}
+Group={{ app_group }}
+WorkingDirectory={{ app_dir }}/current
+EnvironmentFile={{ app_dir }}/shared/.env
+ExecStart=/usr/bin/node {{ app_dir }}/current/apps/api/dist/main.js
+Restart=on-failure
+RestartSec=3
+SyslogIdentifier=bestbooks-api
+
+# Hardening (docs/05)
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths={{ app_dir }}/media
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,12 @@
+---
+# Create the real, ENCRYPTED file next to this one with:
+#   ansible-vault create group_vars/all/vault.yml
+# then populate these keys. Values come from the Terraform outputs:
+#   terraform -chdir=infra/terraform/envs/prod output ses_smtp_username
+#   terraform -chdir=infra/terraform/envs/prod output -raw ses_smtp_password
+#
+# The encrypted vault.yml IS committed; this example and vault_pass.txt are not.
+
+vault_monit_smtp_username: "AKIA_EXAMPLE"
+vault_monit_smtp_password: "example-region-derived-smtp-password"
+# M2 adds: vault_db_password, vault_jwt_secret, …

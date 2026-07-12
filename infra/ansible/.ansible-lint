@@ -1,0 +1,7 @@
+---
+profile: production
+skip_list:
+  - galaxy # internal roles, not published to Ansible Galaxy
+  - meta-no-info # (same reason — no meta/main.yml galaxy_info)
+exclude_paths:
+  - .cache/
