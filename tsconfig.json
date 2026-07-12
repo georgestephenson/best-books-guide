@@ -1,0 +1,5 @@
+{
+  "//": "Solution-style root config: `tsc -b` builds shared then api in dependency order. apps/web is a Vite app typechecked separately (see root `typecheck` script) because composite refs conflict with Vite's noEmit setup.",
+  "files": [],
+  "references": [{ "path": "packages/shared" }, { "path": "apps/api" }]
+}

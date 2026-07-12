@@ -10,18 +10,19 @@ Strategy: **walking skeleton first** — the entire pipeline (Terraform → Ansi
 
 Repo, licence, this design suite, ADRs 0001–0008, CLAUDE.md, TODO.md.
 
-## M1 — Walking skeleton [M] ← next
+## M1 — Walking skeleton [M] ← in progress
 
-The riskiest integrations, done while the app is trivial:
+The riskiest integrations, done while the app is trivial. App half first (verifiable locally), then the infra pipeline (needs the AWS account).
 
-- Monorepo scaffold (npm workspaces, TS strict, ESLint 9 + Prettier, Vitest **with coverage gates wired from the first commit**, commitlint per CONTRIBUTING.md) — `apps/api` serving `/healthz`, `apps/web` placeholder page calling it, `packages/shared` with one shared type to prove the loop.
-- Terraform: bootstrap (state bucket, OIDC role, budget alarm) then `envs/prod` (VPC, EC2, EIP, buckets, zone, SES identity).
-- Domain purchased; DNS + Let's Encrypt live.
-- Ansible `site.yml` converges the host end-to-end; `deploy.yml` ships releases.
-- GitHub Actions: ci / deploy (arm64 build) / terraform workflows green; branch protection on.
-- Monit checks + SES SMTP alert (to own inbox, sandbox is fine); external uptime ping.
+- ✅ Monorepo scaffold (npm workspaces, TS strict, ESLint 9 + Prettier, Vitest **with coverage gates wired from the first commit**, commitlint + husky) — `apps/api` serving `/healthz` through the clean-arch layers, `apps/web` page calling it via the shared contract, `packages/shared` proving the type loop. _(branch `feat/m1-walking-skeleton`, 2026-07-12)_
+- ✅ `ci.yml`: lint · format · typecheck / test + coverage gates / build / audit / PR-title commitlint.
+- ⏳ Domain ✅ registered in Route53; DNS + Let's Encrypt still to wire on the host.
+- ⏳ Terraform: bootstrap (state bucket, OIDC role, budget alarm) then `envs/prod` (VPC, EC2, EIP, buckets, zone import, SES identity).
+- ⏳ Ansible `site.yml` converges the host end-to-end; `deploy.yml` ships releases.
+- ⏳ `deploy.yml` + `terraform.yml` workflows green; branch protection on.
+- ⏳ Monit checks + SES SMTP alert (to own inbox, sandbox is fine); external uptime ping.
 
-**Exit criteria**: push to `main` → live at `https://<domain>/healthz` in <10 min with zero manual steps; one rollback rehearsed; one Monit alert received (kill the API process, watch it restart + email).
+**Exit criteria**: push to `main` → live at `https://bestbooks.guide/healthz` in <10 min with zero manual steps; one rollback rehearsed; one Monit alert received (kill the API process, watch it restart + email).
 
 ## M2 — Accounts & auth [M]
 

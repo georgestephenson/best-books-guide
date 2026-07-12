@@ -1,1 +1,31 @@
+# Content drafts (kept local, not versioned)
 /ideas
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Test / coverage
+coverage/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+*.log
+
+# Terraform (added in the infra phase)
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+!*.tfvars.example
+*.tfvars
+
+# Ansible (added in the infra phase)
+infra/ansible/**/vault_pass.txt
