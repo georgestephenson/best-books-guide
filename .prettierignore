@@ -4,5 +4,7 @@ coverage
 package-lock.json
 ideas
 .claude
+# infra/ is owned by terraform fmt + ansible-lint/yamllint, not Prettier
+infra
 # Design docs are hand-formatted (tables, alignment) — don't let Prettier reflow them
 **/*.md

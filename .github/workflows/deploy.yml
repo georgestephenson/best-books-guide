@@ -1,0 +1,100 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'infra/ansible/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # AWS OIDC
+
+# Never run two production deploys at once, and never cancel one mid-flight.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build & upload release
+    runs-on: ubuntu-24.04-arm # arm64 to match Graviton (native modules build correctly)
+    outputs:
+      sha: ${{ steps.vars.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+      - name: Prune to production dependencies
+        run: npm prune --omit=dev
+
+      - name: Compute release id
+        id: vars
+        run: echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Package the release tarball
+        env:
+          SHA: ${{ steps.vars.outputs.sha }}
+        run: |
+          tar -czf "release-${SHA}.tar.gz" \
+            package.json package-lock.json \
+            node_modules \
+            packages/shared/package.json packages/shared/dist \
+            apps/api/package.json apps/api/dist \
+            apps/web/dist
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: eu-west-2
+
+      - name: Upload release to S3
+        env:
+          SHA: ${{ steps.vars.outputs.sha }}
+        run: aws s3 cp "release-${SHA}.tar.gz" "s3://bestbooks-prod-releases/"
+
+  deploy:
+    name: Deploy to production
+    needs: release
+    runs-on: ubuntu-24.04
+    environment: production # gate with required reviewers in repo settings
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: pipx install ansible-core
+
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Run the Ansible deploy
+        working-directory: infra/ansible
+        env:
+          RELEASE_SHA: ${{ needs.release.outputs.sha }}
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+        run: |
+          printf '%s' "$VAULT_PASSWORD" > /tmp/vault_pass
+          ansible-galaxy collection install -r requirements.yml
+          ansible-playbook deploy.yml \
+            -e "release_sha=${RELEASE_SHA}" \
+            -e "ansible_host=${DEPLOY_HOST}" \
+            --vault-password-file /tmp/vault_pass
+          rm -f /tmp/vault_pass
