@@ -2,7 +2,7 @@
 # Non-secret host/app configuration. Secrets live in vault.yml (see vault.yml.example).
 
 domain_name: bestbooks.guide
-admin_email: change-me@example.com # certbot registration + Monit alert recipient — SET THIS
+admin_email: "{{ vault_admin_email }}" # certbot registration + Monit alerts (kept out of the repo)
 
 app_name: bestbooks
 app_user: bestbooks

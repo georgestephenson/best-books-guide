@@ -7,6 +7,7 @@
 #
 # The encrypted vault.yml IS committed; this example and vault_pass.txt are not.
 
+vault_admin_email: "you@example.com" # certbot + Monit alert recipient (personal PII → keep out of the repo)
 vault_monit_smtp_username: "AKIA_EXAMPLE"
 vault_monit_smtp_password: "example-region-derived-smtp-password"
 # M2 adds: vault_db_password, vault_jwt_secret, …

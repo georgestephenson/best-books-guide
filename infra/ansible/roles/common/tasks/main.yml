@@ -12,12 +12,38 @@
       - gnupg
       - unzip
       - zstd
-      - awscli
       - fail2ban
       - unattended-upgrades
     state: present
     update_cache: true
     cache_valid_time: 3600
+
+# awscli isn't packaged for Ubuntu 24.04; install AWS CLI v2 (arm64) from AWS.
+# The host needs it so the deploy pulls release tarballs from S3 via its instance role.
+- name: Check whether the AWS CLI is installed
+  ansible.builtin.command: aws --version
+  register: common_aws_cli
+  changed_when: false
+  failed_when: false
+
+- name: Download the AWS CLI v2 installer (arm64)
+  ansible.builtin.get_url:
+    url: https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip
+    dest: /tmp/awscliv2.zip
+    mode: "0644"
+  when: common_aws_cli.rc != 0
+
+- name: Unpack the AWS CLI v2 installer
+  ansible.builtin.unarchive:
+    src: /tmp/awscliv2.zip
+    dest: /tmp
+    remote_src: true
+  when: common_aws_cli.rc != 0
+
+- name: Install the AWS CLI v2
+  ansible.builtin.command: /tmp/aws/install
+  when: common_aws_cli.rc != 0
+  changed_when: true
 
 - name: Create the application group
   ansible.builtin.group:
