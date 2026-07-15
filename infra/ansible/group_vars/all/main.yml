@@ -19,7 +19,10 @@ releases_bucket: bestbooks-prod-releases
 media_bucket: bestbooks-prod-media
 
 ses_smtp_endpoint: "email-smtp.{{ aws_region }}.amazonaws.com"
-ses_smtp_port: 587
+# 465 = SMTPS/implicit TLS, which is Monit's documented `using SSL` path.
+# (587 needs STARTTLS, which Monit's mailserver grammar doesn't negotiate —
+# it fails with "530 Must issue a STARTTLS command first".)
+ses_smtp_port: 465
 
 # Secrets, pulled from the Ansible Vault
 monit_smtp_username: "{{ vault_monit_smtp_username }}"
