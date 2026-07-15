@@ -14,6 +14,8 @@ keep_releases: 5
 
 node_major: "24"
 
+ci_deploy_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFTovBgeeioIPlr0jYdsH8AQ7pMFAjadiqJeunbcJ3uV github-actions-deploy"
+
 aws_region: eu-west-2
 releases_bucket: bestbooks-prod-releases
 media_bucket: bestbooks-prod-media
