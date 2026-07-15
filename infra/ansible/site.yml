@@ -1,0 +1,12 @@
+---
+# Full host convergence — safe to re-run (idempotent). Bootstraps a fresh host
+# and fixes drift on an existing one. PostgreSQL/Redis/backup roles join in M2.
+- name: Converge the Best Books Guide host
+  hosts: all
+  become: true
+  roles:
+    - common
+    - nodejs
+    - app
+    - nginx
+    - monit

@@ -1,0 +1,3 @@
+---
+# 2 vCPU host → alert if the 5-min load average sits above 2× cores.
+monit_load_threshold: 4

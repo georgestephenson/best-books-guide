@@ -37,21 +37,21 @@ infra/terraform/
 
 ```
 infra/ansible/
-├── inventories/prod/hosts.yml     # EIP DNS name; vars per group
-├── group_vars/all/vault.yml       # Ansible Vault: DB/Redis/JWT secrets, SMTP creds
-├── roles/
-│   ├── common       # users, ssh hardening, ufw, unattended-upgrades, fail2ban, zstd/awscli
-│   ├── nodejs       # Node 24 via NodeSource (arm64; bundles npm 11)
-│   ├── postgresql   # PG 18 via PGDG apt, tuned for 2GB host, pg_trgm/citext, app role
-│   ├── redis        # Redis 8 (official repo), localhost-only, maxmemory + LRU for cache keys
-│   ├── nginx        # vhost: SPA static + /api proxy + /covers, TLS (certbot role-managed), headers
-│   ├── monit        # all checks + SES SMTP alerting (below)
-│   ├── backup       # systemd timers + scripts (pg_dump→S3, media sync, heartbeats)
-│   └── app          # service user, /srv/bestbooks layout, systemd unit, .env from Vault
-└── playbooks/
-    ├── site.yml     # full converge (bootstrap or drift-fix); idempotent, safe to re-run
-    └── deploy.yml   # app release only (below)
+├── site.yml         # full converge (bootstrap or drift-fix); idempotent, safe to re-run
+├── deploy.yml       # app release only (below)
+├── inventories/prod/hosts.yml     # EIP; vars per group
+├── group_vars/all/  # main.yml (config) + vault.yml (Ansible Vault: DB/Redis/JWT secrets, SMTP creds)
+└── roles/
+    ├── common       # users, ssh hardening, ufw, unattended-upgrades, fail2ban, zstd/awscli
+    ├── nodejs       # Node 24 via NodeSource (arm64; bundles npm 11)
+    ├── nginx        # vhost: SPA static + /api proxy + /covers, TLS (certbot), headers
+    ├── app          # service user, /srv/bestbooks layout, systemd unit, .env from Vault
+    ├── monit        # all checks + SES SMTP alerting (below)
+    ├── postgresql   # [M2] PG 18 via PGDG apt, tuned for 2GB host, pg_trgm/citext, app role
+    ├── redis        # [M2] Redis 8, localhost-only, maxmemory + LRU for cache keys
+    └── backup       # [M2] systemd timers + scripts (pg_dump→S3, media sync, heartbeats)
 ```
+Playbooks sit next to `roles/` (not in a `playbooks/` subdir) so role resolution works from any working directory, not just via `ansible.cfg`.
 
 - ansible-core ≥ 2.19 (current line: 2.20/2.21), `ansible-lint` in CI, `--check --diff` supported by all roles.
 - **Vault**: passphrase lives in a GH environment secret (CI) and the admin password manager (local). Rotating any app secret = edit vault + `deploy.yml`.

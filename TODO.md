@@ -12,15 +12,29 @@ Canonical task list — see [CLAUDE.md](CLAUDE.md) for how this file is used. Ro
 
 ## Next (M1 — walking skeleton)
 
-App skeleton is built + verified on branch `feat/m1-walking-skeleton` (see Done). What's left is the infra pipeline — **needs the AWS account created first**:
+All infra-as-code is **written + statically verified** on `feat/m1-infra` (Terraform fmt/validate/tflint, Ansible ansible-lint/syntax-check, workflows actionlint). What remains is the **apply phase — needs the AWS account** — then the drills.
 
-- [ ] Terraform bootstrap (state bucket w/ native locking, GitHub OIDC role, budget alarm), then envs/prod
-  - ⚠️ Registering the domain in Route53 **auto-created a public hosted zone** for `bestbooks.guide`. The Terraform `dns` module must `terraform import` that existing zone (or reference its ID), not create a second one — two zones = split-brain NS. Confirm the zone's NS records still match the registered domain's after import.
-- [ ] Ansible site.yml converges the host; deploy.yml ships a release
-- [ ] `deploy.yml` workflow (arm64 release build → S3 → Ansible over SSH); `terraform.yml` (plan on PR, gated apply)
-- [ ] Wire `APP_VERSION` (git SHA) into the deployed systemd env so `/healthz` reports the running release
-- [ ] Monit checks + SES SMTP alerts; external uptime ping (e.g. UptimeRobot free)
-- [ ] Rehearse one rollback + one kill-the-process Monit drill (M1 exit criteria)
+**AWS account + apply:**
+
+- [ ] Create/confirm the AWS account (root MFA, admin IAM identity) — blocks everything below
+- [ ] `terraform apply` bootstrap (local state) → note outputs
+- [ ] `terraform apply` envs/prod → note EIP + SES SMTP creds
+  - Route53 auto-created the zone at registration; the `dns` module uses a **data-source lookup** (not import), so no split-brain — just confirm the zone resolves.
+- [ ] Set inventory `ansible_host` = EIP; create + encrypt `group_vars/all/vault.yml` (SES SMTP creds from TF output); set `admin_email`
+- [ ] `ansible-playbook site.yml` → host converged + Let's Encrypt cert issued
+
+**GitHub config (deploy workflow):**
+
+- [ ] Repo **variables**: `AWS_ROLE_ARN` (bootstrap output `github_actions_role_arn`), `DEPLOY_HOST` (the EIP)
+- [ ] Repo **secrets**: `SSH_PRIVATE_KEY` (matches the EC2 key pair), `ANSIBLE_VAULT_PASSWORD`
+- [ ] Create the **`production`** environment with required reviewers (gates deploys)
+- [ ] Branch protection on `main`: require CI checks; squash-merge only
+
+**Exit-criteria drills:**
+
+- [ ] Push to main → live at `https://bestbooks.guide/healthz` reporting the git SHA
+- [ ] Rehearse one rollback (`deploy.yml -e release_sha=<prev>`); kill the API process, watch Monit restart + email
+- [ ] External uptime ping (e.g. UptimeRobot free)
 
 ## Later (scheduled reminders)
 

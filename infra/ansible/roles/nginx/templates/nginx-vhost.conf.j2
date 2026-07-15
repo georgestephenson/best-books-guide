@@ -1,0 +1,77 @@
+# Managed by Ansible (roles/nginx)
+
+# HTTP: serve ACME renewals, redirect everything else to HTTPS.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{ domain_name }} www.{{ domain_name }};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://{{ domain_name }}$request_uri;
+    }
+}
+
+# HTTPS: redirect www to the apex.
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name www.{{ domain_name }};
+
+    ssl_certificate /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ domain_name }}/privkey.pem;
+
+    return 301 https://{{ domain_name }}$request_uri;
+}
+
+# HTTPS: the app.
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name {{ domain_name }};
+
+    ssl_certificate /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ domain_name }}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:SSL:10m;
+
+    root {{ app_dir }}/current/apps/web/dist;
+    index index.html;
+
+    # Security headers (docs/05). Nginx sets them for static assets; the API
+    # sets its own via helmet.
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header X-Frame-Options "DENY" always;
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:{{ app_port }};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /healthz {
+        proxy_pass http://127.0.0.1:{{ app_port }};
+        proxy_set_header Host $host;
+        access_log off;
+    }
+
+    # Book covers from local disk (docs/02).
+    location /covers/ {
+        alias {{ app_dir }}/media/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # SPA fallback.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
