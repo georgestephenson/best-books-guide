@@ -77,6 +77,14 @@ resource "aws_iam_role_policy" "instance" {
   })
 }
 
+# Lets the (preinstalled) SSM agent register, so we can reach the host over an
+# SSM tunnel instead of inbound SSH. GitHub runners have dynamic IPs that can
+# never be allowlisted, and the admin's IP rotates — SSM solves both (docs/06).
+resource "aws_iam_role_policy_attachment" "instance_ssm" {
+  role       = aws_iam_role.instance.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
 resource "aws_iam_instance_profile" "instance" {
   name = "${var.project}-instance"
   role = aws_iam_role.instance.name

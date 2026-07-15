@@ -50,7 +50,7 @@ Explain **why** and with what consequences — the diff already shows *how*. Req
 
 - Breaking changes: `!` after the type/scope **and** a `BREAKING CHANGE:` footer. Here that means an incompatible `/api/v1` contract change or a non-rollback-safe migration — rare and deliberate ([03 — Data model](docs/03-data-model.md) expand→contract policy).
 - Issue links: `Closes #12`, `Refs #12`.
-- Attribution trailers (`Co-authored-by:`) are kept, including on AI-assisted commits.
+- **No attribution trailers** — no `Co-authored-by:` or "generated with" lines, including on AI-assisted commits.
 
 ### Examples (from this project's actual roadmap)
 
