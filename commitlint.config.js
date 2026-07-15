@@ -8,7 +8,20 @@ export default {
     'scope-enum': [
       2,
       'always',
-      ['api', 'web', 'shared', 'db', 'terraform', 'ansible', 'deps', 'infra', 'ci', 'repo'],
+      // 'deps-dev' is Dependabot's scope for devDependency bumps; 'deps' is for runtime deps.
+      [
+        'api',
+        'web',
+        'shared',
+        'db',
+        'terraform',
+        'ansible',
+        'deps',
+        'deps-dev',
+        'infra',
+        'ci',
+        'repo',
+      ],
     ],
   },
 };

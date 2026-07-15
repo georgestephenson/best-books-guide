@@ -34,7 +34,7 @@ There is deliberately no `infra` type: infra changes use standard types with an 
 
 ### Scopes (mirror the repo layout)
 
-`api` · `web` · `shared` · `db` (schema/migrations — worth its own signal even though it lives in api) · `terraform` · `ansible` · `deps`. Omit the scope for repo-wide changes; if one commit needs two scopes, it usually wants to be two commits.
+`api` · `web` · `shared` · `db` (schema/migrations — worth its own signal even though it lives in api) · `terraform` · `ansible` · `deps` · `deps-dev` (Dependabot's split: runtime vs. dev dependency bumps). Omit the scope for repo-wide changes; if one commit needs two scopes, it usually wants to be two commits.
 
 ### Subject line
 
