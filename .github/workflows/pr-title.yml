@@ -1,0 +1,33 @@
+name: PR title
+
+# Split out of ci.yml so that `edited` re-runs only this cheap check, not the
+# whole suite. Without `edited`, retitling a PR never re-triggers validation and
+# the check stays red until someone pushes a commit — which for a Dependabot PR
+# means there is no way to clear it at all.
+on:
+  pull_request:
+    types: [opened, reopened, edited, synchronize]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  commitlint:
+    name: PR title (Conventional Commits)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Squash-merge uses the PR title as the commit subject, so that's what we validate.
+      - name: Validate PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: echo "$PR_TITLE" | npx commitlint
