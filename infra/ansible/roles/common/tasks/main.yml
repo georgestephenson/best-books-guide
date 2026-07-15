@@ -59,6 +59,13 @@
     home: "{{ app_dir }}"
     create_home: false
 
+- name: Authorise the CI deploy key
+  ansible.posix.authorized_key:
+    user: "{{ ansible_user }}"
+    key: "{{ ci_deploy_public_key }}"
+    comment: github-actions-deploy
+    state: present
+
 - name: Harden SSH (no root login, keys only)
   ansible.builtin.copy:
     dest: /etc/ssh/sshd_config.d/10-hardening.conf
