@@ -71,30 +71,42 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # The deploy tunnels SSH over SSM, so this job needs AWS creds of its own
+      # (the release job's don't carry across jobs).
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: eu-west-2
+
+      - name: Install the SSM session-manager plugin
+        run: |
+          curl -sS "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o /tmp/smp.deb
+          sudo dpkg -i /tmp/smp.deb
+
       - name: Install Ansible
         run: pipx install ansible-core
 
-      - name: Configure SSH
+      # SSH still authenticates us to the host; SSM only carries the connection,
+      # so there's no inbound port 22 and no runner IP to allowlist. The
+      # ProxyCommand lives in the inventory.
+      - name: Configure SSH key
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
         run: |
           mkdir -p ~/.ssh
-          printf '%s' "$SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
       - name: Run the Ansible deploy
         working-directory: infra/ansible
         env:
           RELEASE_SHA: ${{ needs.release.outputs.sha }}
-          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
           VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
         run: |
           printf '%s' "$VAULT_PASSWORD" > /tmp/vault_pass
           ansible-galaxy collection install -r requirements.yml
           ansible-playbook deploy.yml \
             -e "release_sha=${RELEASE_SHA}" \
-            -e "ansible_host=${DEPLOY_HOST}" \
             --vault-password-file /tmp/vault_pass
           rm -f /tmp/vault_pass

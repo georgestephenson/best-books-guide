@@ -63,3 +63,37 @@ resource "aws_iam_role_policy" "github_actions_releases" {
     ]
   })
 }
+
+# The deploy reaches the host by tunnelling SSH over SSM — no inbound port 22,
+# and no IP allowlist for GitHub's dynamic runners (docs/06).
+resource "aws_iam_role_policy" "github_actions_ssm" {
+  name = "deploy-over-ssm"
+  role = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "StartSshSession"
+        Effect = "Allow"
+        Action = ["ssm:StartSession"]
+        Resource = [
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:instance/*",
+          "arn:aws:ssm:${var.aws_region}::document/AWS-StartSSHSession",
+        ]
+      },
+      {
+        Sid      = "ManageOwnSessions"
+        Effect   = "Allow"
+        Action   = ["ssm:TerminateSession", "ssm:ResumeSession"]
+        Resource = "arn:aws:ssm:*:*:session/*"
+      },
+      {
+        Sid      = "DiscoverInstances"
+        Effect   = "Allow"
+        Action   = ["ssm:DescribeInstanceInformation"]
+        Resource = "*"
+      },
+    ]
+  })
+}
