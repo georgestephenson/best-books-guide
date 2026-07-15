@@ -4,9 +4,16 @@ set daemon 60
 
 set log syslog
 
+# We replace Debian's monitrc wholesale, so we must re-declare these: monit's
+# systemd unit runs ProtectSystem=strict/ProtectHome=yes and only /run,
+# /var/lib/monit and /var/log are writable. Without these, monit defaults to
+# /root/.monit.id and dies with "Read-only file system".
+set idfile /var/lib/monit/id
+set statefile /var/lib/monit/state
+
 set mailserver {{ ses_smtp_endpoint }} port {{ ses_smtp_port }}
   username "{{ monit_smtp_username }}" password "{{ monit_smtp_password }}"
-  using tlsv1.2
+  using ssl
 
 set mail-format {
   from: monit@{{ domain_name }}
