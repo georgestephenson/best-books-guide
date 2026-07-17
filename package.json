@@ -24,6 +24,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run --coverage",
+    "test:unit": "vitest run --project shared --project api --project web",
     "test:watch": "vitest",
     "prepare": "husky || true"
   },

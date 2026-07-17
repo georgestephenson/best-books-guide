@@ -194,7 +194,7 @@ Redis is **rebuildable**: losing it logs everyone out and clears limits/caches �
 
 ## Migrations & seeds
 
-- **drizzle-kit** generates SQL migration files from the schema in `apps/api/src/infra/db/schema/`; files are committed and reviewed like code — no auto-apply from dev machines.
-- Applied by the deploy playbook (`drizzle-kit migrate`) under a PostgreSQL advisory lock, *before* the new app version starts ([07 — Operations](07-operations.md)). Migrations must be backwards-compatible with the currently running version (expand → migrate → contract when a breaking change is unavoidable).
+- **drizzle-kit** generates SQL migration files from the schema in `apps/api/src/infra/db/schema/`; files are committed and reviewed like code — no auto-apply from dev machines. They are numbered from `0000` (drizzle-kit's convention), so "migration 0001" here refers to the first migration file, `0000_users_and_extensions.sql`, which enables `citext`/`pg_trgm` and creates `users`.
+- Applied by the deploy playbook (compiled `dist/migrate.js`, using `drizzle-orm`'s runtime migrator so `drizzle-kit` need not ship to prod) under a PostgreSQL advisory lock, *before* the new app version starts ([07 — Operations](07-operations.md)). Migrations must be backwards-compatible with the currently running version (expand → migrate → contract when a breaking change is unavoidable).
 - **Seeds**: `apps/api/seeds/` — dev seed (fake data for local work) and a production bootstrap seed (initial subjects). Real catalogue content arrives via the admin OL import, not seeds.
 - Admin bootstrap runbook: `npm -w apps/api run promote-admin -- <email>` (documented in [07 — Operations](07-operations.md) §Runbooks).

@@ -20,6 +20,10 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   const app = fastify({
     // Full structured logging in dev/prod; silent under test to keep output clean.
     logger: deps.config.NODE_ENV === 'test' ? false : { level: deps.config.LOG_LEVEL },
+    // Nginx is the only thing that talks to us, on loopback. Without this, request.ip
+    // is always 127.0.0.1 and every per-IP rate limit (M2) collapses into one bucket.
+    // Trusting just loopback means we read the X-Forwarded-For Nginx sets, no further.
+    trustProxy: '127.0.0.1',
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   void app.register(helmet);

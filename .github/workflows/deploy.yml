@@ -50,6 +50,7 @@ jobs:
             node_modules \
             packages/shared/package.json packages/shared/dist \
             apps/api/package.json apps/api/dist \
+            apps/api/drizzle \
             apps/web/dist
 
       - name: Configure AWS credentials (OIDC)

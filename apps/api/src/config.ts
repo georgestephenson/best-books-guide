@@ -26,6 +26,14 @@ const ConfigSchema = Type.Object({
   ),
   /** Git SHA of the running release, injected by the deploy pipeline; 'dev' locally. */
   APP_VERSION: Type.String({ default: 'dev', minLength: 1 }),
+
+  // Data stores (docs/03). Defaults target the local docker-compose stack so dev
+  // and tests are zero-config; prod always sets these explicitly from env.j2.
+  DATABASE_URL: Type.String({
+    default: 'postgresql://bestbooks:bestbooks@127.0.0.1:5432/bestbooks',
+    minLength: 1,
+  }),
+  REDIS_URL: Type.String({ default: 'redis://127.0.0.1:6379', minLength: 1 }),
 });
 
 export type Config = Static<typeof ConfigSchema>;

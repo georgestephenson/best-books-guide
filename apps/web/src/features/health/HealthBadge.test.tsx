@@ -20,7 +20,10 @@ describe('HealthBadge', () => {
 
   it('renders status, version and uptime when ready', () => {
     render(
-      <HealthBadge state="ready" health={{ status: 'ok', version: 'abc123', uptimeSeconds: 12 }} />,
+      <HealthBadge
+        state="ready"
+        health={{ status: 'ok', version: 'abc123', uptimeSeconds: 12, db: true, redis: true }}
+      />,
     );
     expect(screen.getByText(/api ok · abc123 · up 12s/i)).toBeInTheDocument();
   });

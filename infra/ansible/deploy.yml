@@ -48,6 +48,36 @@
         group: "{{ app_group }}"
         mode: "0640"
 
+    # Migrations run against the OLD app still serving on the OLD schema, so they
+    # must be expand-only/backward-compatible (docs/03, docs/07). The pre-migration
+    # dump is the rollback safety net — a symlink rollback does not revert schema.
+    - name: Ensure the pre-migration backup directory exists
+      ansible.builtin.file:
+        path: "{{ app_dir }}/backups"
+        state: directory
+        owner: root
+        group: root
+        mode: "0750"
+
+    - name: Back up the database before migrating
+      ansible.builtin.shell:
+        cmd: >-
+          runuser -u postgres -- pg_dump --format=custom {{ app_name }}
+          > {{ app_dir }}/backups/pre-{{ release_sha }}.dump
+        creates: "{{ app_dir }}/backups/pre-{{ release_sha }}.dump"
+
+    # dist/migrate.js takes a PG advisory lock, so overlapping deploys can't race.
+    # Only DATABASE_URL is needed; every other config key has a schema default.
+    - name: Apply database migrations
+      ansible.builtin.command:
+        cmd: /usr/bin/node {{ app_dir }}/releases/{{ release_sha }}/apps/api/dist/migrate.js
+      become: true
+      become_user: "{{ app_user }}"
+      environment:
+        NODE_ENV: production
+        DATABASE_URL: "{{ database_url }}"
+      changed_when: true
+
     - name: Point 'current' at the new release
       ansible.builtin.file:
         src: "{{ app_dir }}/releases/{{ release_sha }}"

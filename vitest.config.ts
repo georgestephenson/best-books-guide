@@ -23,7 +23,29 @@ export default defineConfig({
       },
       {
         resolve: { alias: sharedAlias },
-        test: { name: 'api', root: './apps/api', environment: 'node' },
+        // Unit tests only — pure use-cases and HTTP wiring with in-memory fakes.
+        // Runs without any data stores.
+        test: {
+          name: 'api',
+          root: './apps/api',
+          environment: 'node',
+          include: ['src/**/*.test.ts'],
+        },
+      },
+      {
+        resolve: { alias: sharedAlias },
+        // Integration tests against real PG + Redis (docs/02). globalSetup migrates
+        // once; fileParallelism is off so the shared test database isn't raced.
+        // Needs the stores up (`docker compose up -d`) — run `npm run test:unit` to
+        // skip. Coverage still aggregates into the one report when run via `npm test`.
+        test: {
+          name: 'api-integration',
+          root: './apps/api',
+          environment: 'node',
+          include: ['test/**/*.test.ts'],
+          globalSetup: ['./test/global-setup.ts'],
+          fileParallelism: false,
+        },
       },
       {
         resolve: { alias: sharedAlias },
@@ -45,6 +67,7 @@ export default defineConfig({
         '**/*.d.ts',
         '**/index.ts', // barrel re-exports — no logic to cover
         'apps/api/src/main.ts', // composition root / process bootstrap — exercised by deploy smoke, not unit tests
+        'apps/api/src/migrate.ts', // one-shot migration CLI — exercised by the deploy step and globalSetup
         'apps/web/src/main.tsx',
         'apps/web/src/lib/queryClient.ts', // DI bootstrap wiring
       ],

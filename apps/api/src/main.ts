@@ -1,5 +1,9 @@
 import { loadConfig } from './config.js';
 import { SystemClock } from './infra/clock.js';
+import { createDb } from './infra/db/pool.js';
+import { createRedis } from './infra/redis/client.js';
+import { PgHealthProbe } from './infra/db/pg-health-probe.js';
+import { RedisHealthProbe } from './infra/redis/redis-health-probe.js';
 import { GetHealth } from './app/usecases/get-health.js';
 import { buildServer } from './http/server.js';
 
@@ -11,9 +15,24 @@ async function main(): Promise<void> {
   const config = loadConfig();
 
   const clock = new SystemClock();
-  const getHealth = new GetHealth({ clock, version: config.APP_VERSION });
+  const { pool } = createDb(config.DATABASE_URL);
+  const redis = createRedis(config.REDIS_URL);
+
+  const getHealth = new GetHealth({
+    clock,
+    version: config.APP_VERSION,
+    db: new PgHealthProbe(pool),
+    redis: new RedisHealthProbe(redis),
+  });
 
   const app = buildServer({ config, getHealth });
+
+  // Fastify awaits onClose before app.close() resolves, so the stores drain before
+  // the process exits (the old code exited immediately after close()).
+  app.addHook('onClose', async () => {
+    await pool.end();
+    await redis.quit().catch(() => redis.disconnect());
+  });
 
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info({ signal }, 'shutting down');

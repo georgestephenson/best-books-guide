@@ -31,6 +31,12 @@ ses_smtp_endpoint: "email-smtp.{{ aws_region }}.amazonaws.com"
 # it fails with "530 Must issue a STARTTLS command first".)
 ses_smtp_port: 465
 
+# Built once here so env.j2 (site.yml) and the migrate step (deploy.yml) agree on
+# one connection string. urlencode is a path encoder that leaves '/' — and a '/'
+# in userinfo truncates the authority — so it's escaped by hand (base64 passwords
+# hit this ~half the time).
+database_url: "postgresql://{{ app_user }}:{{ vault_db_password | urlencode | replace('/', '%2F') }}@127.0.0.1:5432/{{ app_name }}"
+
 # Secrets, pulled from the Ansible Vault
 monit_smtp_username: "{{ vault_monit_smtp_username }}"
 monit_smtp_password: "{{ vault_monit_smtp_password }}"

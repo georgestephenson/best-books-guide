@@ -1,0 +1,39 @@
+# Local dev + test data stores ONLY. Production runs PG and Redis natively on the
+# host via Ansible, never in containers (ADR-0006/0007) — this file is the "docker
+# compose for PG 18 + Redis 8" that docs/07 prescribes for local work. Majors are
+# pinned to match the Ansible roles and the CI service containers (ADR-0006).
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: bestbooks
+      POSTGRES_PASSWORD: bestbooks
+      POSTGRES_DB: bestbooks
+    ports:
+      - '5432:5432'
+    # Seeds the separate integration-test database (see initdb script). The dev DB
+    # (bestbooks) and test DB (bestbooks_test) are isolated so `npm test`'s
+    # TRUNCATE-between-tests never touches data you're working with.
+    volumes:
+      - ./scripts/dev/initdb:/docker-entrypoint-initdb.d:ro
+      # PG 18 images store data in a major-version subdirectory, so the volume
+      # mounts at /var/lib/postgresql (not /…/data) — the older path errors out.
+      - bestbooks-pg:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U bestbooks']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:8
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  bestbooks-pg:

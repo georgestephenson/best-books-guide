@@ -79,7 +79,9 @@ Branch protection on `main`: CI required, one approving review required (solo-de
 └── media/                 # covers (backed to S3)
 ```
 
-`deploy.yml` steps: fetch tarball from S3 (instance role) → unpack to `releases/<sha>` → link shared `.env` → **pre-migration `pg_dump`** → `drizzle-kit migrate` under PG advisory lock → swap `current` symlink → `systemctl restart bestbooks-api` → poll `/healthz` (10×3s) → on failure: swap symlink back, restart, **fail loudly**; migrations are expand-only so the previous release keeps working ([03 — Data model](03-data-model.md)) → prune old releases. Web assets are static files in the release; Nginx serves `current/apps/web/dist`.
+`deploy.yml` steps: fetch tarball from S3 (instance role) → unpack to `releases/<sha>` → link shared `.env` → **pre-migration `pg_dump`** → `node dist/migrate.js` under a PG advisory lock → swap `current` symlink → `systemctl restart bestbooks-api` → poll `/healthz` (10×3s) → on failure: swap symlink back, restart, **fail loudly**; migrations are expand-only so the previous release keeps working ([03 — Data model](03-data-model.md)) → prune old releases. Web assets are static files in the release; Nginx serves `current/apps/web/dist`.
+
+> Migrations ship as a compiled entrypoint, not the `drizzle-kit` CLI: `drizzle-kit` stays a devDependency (used only to *generate*), so it isn't in the pruned production `node_modules`. `dist/migrate.js` uses `drizzle-orm`'s runtime migrator (a prod dependency) against the committed `apps/api/drizzle/` folder, wrapped in `pg_advisory_lock` so overlapping deploys can't race. The `apps/api/drizzle` folder is added to the release tarball's allowlist for this reason.
 
 systemd unit (`app` role): `User=bestbooks`, `EnvironmentFile=/srv/bestbooks/shared/.env`, `ExecStart=node /srv/bestbooks/current/apps/api/dist/main.js`, `Restart=on-failure`, `RestartSec=3`, hardening per [05 — Security](05-security.md), `SyslogIdentifier=bestbooks-api`.
 

@@ -6,6 +6,8 @@ const HealthSchema = Type.Object({
   status: Type.Union([Type.Literal('ok'), Type.Literal('degraded')]),
   version: Type.String(),
   uptimeSeconds: Type.Integer(),
+  db: Type.Boolean(),
+  redis: Type.Boolean(),
 });
 
 /**
