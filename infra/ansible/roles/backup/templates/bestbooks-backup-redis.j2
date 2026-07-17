@@ -1,0 +1,34 @@
+#!/bin/bash
+{{ ansible_managed | comment }}
+# Nightly Redis snapshot → S3. Redis holds only rebuildable data (docs/03), so this
+# isn't about durability — restoring it means members stay logged in through a host
+# rebuild instead of all being kicked out at once.
+set -Eeuo pipefail
+
+STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+RDB=/var/lib/redis/dump.rdb
+COPY="/tmp/redis-${STAMP}.rdb.gz"
+trap 'rm -f "${COPY}"' EXIT
+
+# BGSAVE forks and returns immediately, so poll LASTSAVE rather than racing the
+# fork and shipping a half-written (or stale) file.
+BEFORE="$(redis-cli LASTSAVE)"
+redis-cli BGSAVE >/dev/null
+
+for _ in $(seq 1 60); do
+  sleep 1
+  [[ "$(redis-cli LASTSAVE)" != "${BEFORE}" ]] && break
+done
+
+if [[ "$(redis-cli LASTSAVE)" == "${BEFORE}" ]]; then
+  echo "redis BGSAVE did not complete within 60s" >&2
+  exit 1
+fi
+
+gzip -9 -c "${RDB}" >"${COPY}"
+aws s3 cp "${COPY}" "s3://{{ backups_bucket }}/daily/redis-${STAMP}.rdb.gz" --region {{ aws_region }}
+
+echo "redis backup ok: ${STAMP} ($(stat -c %s "${COPY}") bytes)"
+{% if backup_heartbeat_url %}
+curl -fsS -m 10 --retry 3 "{{ backup_heartbeat_url }}" >/dev/null
+{% endif %}

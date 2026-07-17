@@ -1,0 +1,16 @@
+---
+# PG 18 is a hard floor, not a preference: the schema defaults ids to the native
+# `uuidv7()` (docs/03), which doesn't exist before 18. Compose and the CI service
+# containers pin the same major (ADR-0006).
+postgresql_version: "18"
+
+postgresql_db_name: "{{ app_name }}"
+postgresql_db_user: "{{ app_user }}"
+
+# Tuned for the 2GB host, which also carries Node, Redis and Nginx — so PG gets a
+# conservative slice rather than the usual 25%-of-RAM rule of thumb.
+postgresql_max_connections: 40
+postgresql_shared_buffers: 256MB
+postgresql_effective_cache_size: 768MB
+postgresql_maintenance_work_mem: 64MB
+postgresql_work_mem: 4MB

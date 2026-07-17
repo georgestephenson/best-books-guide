@@ -1,0 +1,28 @@
+#!/bin/bash
+{{ ansible_managed | comment }}
+# Nightly logical backup of the application database → S3, via the instance role.
+# Restore drill lives in docs/07 §Runbooks.
+set -Eeuo pipefail
+
+STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+DUMP="/tmp/{{ postgresql_db_name }}-${STAMP}.sql.gz"
+trap 'rm -f "${DUMP}"' EXIT
+
+# Peer auth as the postgres superuser: no password on disk, no TCP round-trip.
+# runuser, not sudo — sudo is setuid, which the unit's NoNewPrivileges forbids.
+runuser -u postgres -- pg_dump --format=plain --no-owner --no-privileges "{{ postgresql_db_name }}" \
+  | gzip -9 >"${DUMP}"
+
+aws s3 cp "${DUMP}" "s3://{{ backups_bucket }}/daily/{{ postgresql_db_name }}-${STAMP}.sql.gz" \
+  --region {{ aws_region }}
+
+# Sundays are also kept under weekly/ — same object, longer lifecycle.
+if [[ "$(date -u +%u)" == "{{ backup_weekly_dow }}" ]]; then
+  aws s3 cp "${DUMP}" "s3://{{ backups_bucket }}/weekly/{{ postgresql_db_name }}-${STAMP}.sql.gz" \
+    --region {{ aws_region }}
+fi
+
+echo "db backup ok: ${STAMP} ($(stat -c %s "${DUMP}") bytes)"
+{% if backup_heartbeat_url %}
+curl -fsS -m 10 --retry 3 "{{ backup_heartbeat_url }}" >/dev/null
+{% endif %}

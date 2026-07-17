@@ -1,0 +1,12 @@
+{{ ansible_managed | comment }}
+[Unit]
+Description={{ item.description }} (timer)
+
+[Timer]
+OnCalendar={{ item.on_calendar }}
+RandomizedDelaySec=300
+# Catch up after downtime rather than silently skipping a night.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

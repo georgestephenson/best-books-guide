@@ -1,0 +1,24 @@
+{{ ansible_managed | comment }}
+# Dropped into conf.d/ so the packaged postgresql.conf stays pristine and
+# upgrades don't conflict. Later entries win, and conf.d/ is included last.
+
+# ADR-0007: PostgreSQL is co-hosted with the app and never leaves the box.
+listen_addresses = 'localhost'
+
+max_connections = {{ postgresql_max_connections }}
+shared_buffers = {{ postgresql_shared_buffers }}
+effective_cache_size = {{ postgresql_effective_cache_size }}
+maintenance_work_mem = {{ postgresql_maintenance_work_mem }}
+work_mem = {{ postgresql_work_mem }}
+
+# gp3 EBS is SSD-backed: random reads cost about what sequential ones do, and it
+# services many concurrent requests. The 4.0/1 defaults assume spinning rust.
+random_page_cost = 1.1
+effective_io_concurrency = 200
+
+# Spread checkpoints out rather than stalling on a wall of dirty pages.
+checkpoint_completion_target = 0.9
+wal_compression = on
+
+log_min_duration_statement = 500ms # slow-query visibility without logging every SELECT
+log_line_prefix = '%m [%p] %q%u@%d '

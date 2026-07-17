@@ -14,11 +14,16 @@ keep_releases: 5
 
 node_major: "24"
 
+# Transactional sender (verification + password-reset mail). The SES *identity* is
+# the apex domain; mail.{{ domain_name }} is the MAIL FROM/SPF domain, not this.
+app_email_from: "Best Books Guide <no-reply@{{ domain_name }}>"
+
 ci_deploy_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFTovBgeeioIPlr0jYdsH8AQ7pMFAjadiqJeunbcJ3uV github-actions-deploy"
 
 aws_region: eu-west-2
 releases_bucket: bestbooks-prod-releases
 media_bucket: bestbooks-prod-media
+backups_bucket: bestbooks-prod-backups
 
 ses_smtp_endpoint: "email-smtp.{{ aws_region }}.amazonaws.com"
 # 465 = SMTPS/implicit TLS, which is Monit's documented `using SSL` path.

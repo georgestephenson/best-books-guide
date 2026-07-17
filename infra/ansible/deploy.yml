@@ -38,11 +38,12 @@
         group: "{{ app_group }}"
         creates: "{{ app_dir }}/releases/{{ release_sha }}/apps/api/dist/main.js"
 
+    # Its own file, not the Ansible-rendered .env — otherwise the next site.yml
+    # run re-templates .env and wipes the stamp back to 'unknown'.
     - name: Stamp APP_VERSION with the release SHA
-      ansible.builtin.lineinfile:
-        path: "{{ app_dir }}/shared/.env"
-        regexp: '^APP_VERSION='
-        line: "APP_VERSION={{ release_sha }}"
+      ansible.builtin.copy:
+        dest: "{{ app_dir }}/shared/.env.release"
+        content: "APP_VERSION={{ release_sha }}\n"
         owner: "{{ app_user }}"
         group: "{{ app_group }}"
         mode: "0640"

@@ -1,4 +1,12 @@
 ---
+# Gates the restart handler: on a fresh host there's no code to restart yet (the
+# first start happens on deploy), but on a converged host a config change must
+# take effect now rather than at the next deploy.
+- name: Check whether a release is already deployed
+  ansible.builtin.stat:
+    path: "{{ app_dir }}/current"
+  register: app_current_release
+
 - name: Create the /srv directory structure
   ansible.builtin.file:
     path: "{{ item }}"
@@ -16,6 +24,20 @@
   ansible.builtin.template:
     src: env.j2
     dest: "{{ app_dir }}/shared/.env"
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: "0640"
+  notify: Restart bestbooks-api
+
+# APP_VERSION is the one env var Ansible doesn't own — the deploy playbook stamps
+# it per release. Keeping it in a separate file is what makes that safe: while it
+# lived in the templated .env, every site.yml re-run silently overwrote the
+# deployed SHA with 'unknown'. `force: false` means we never clobber a live stamp.
+- name: Seed the release stamp file (deploy.yml owns its contents)
+  ansible.builtin.copy:
+    dest: "{{ app_dir }}/shared/.env.release"
+    content: "APP_VERSION=unknown\n"
+    force: false
     owner: "{{ app_user }}"
     group: "{{ app_group }}"
     mode: "0640"

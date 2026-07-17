@@ -1,0 +1,13 @@
+---
+redis_port: 6379
+
+# 2GB host shared with PG, Node and Nginx. Redis holds only rebuildable data
+# (ADR-0007), so it gets the smallest slice of the three.
+redis_maxmemory: 192mb
+
+# Sessions live here alongside caches and rate-limit counters, and Redis can't
+# evict by prefix — so under pressure the LRU tail (idle sessions) gets dropped,
+# which logs those members out. That's the trade docs/03 already accepts
+# ("losing it logs everyone out — annoying, not damaging"). The alternative,
+# noeviction, would fail *logins* instead, which is strictly worse.
+redis_maxmemory_policy: allkeys-lru

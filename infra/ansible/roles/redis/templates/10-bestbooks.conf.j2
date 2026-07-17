@@ -1,0 +1,20 @@
+{{ ansible_managed | comment }}
+# Included from redis.conf, which reads /etc/redis/redis.conf first — so these
+# override the packaged defaults.
+
+# ADR-0007: bound to loopback, never exposed. The SG and ufw agree, but defence
+# in depth is free here.
+bind 127.0.0.1 -::1
+port {{ redis_port }}
+protected-mode yes
+
+maxmemory {{ redis_maxmemory }}
+maxmemory-policy {{ redis_maxmemory_policy }}
+
+# RDB only — no AOF. Everything in here is rebuildable (docs/03), so the point of
+# persistence is letting a restart keep members logged in, not durability. The
+# nightly snapshot the backup role ships to S3 rides on this file.
+save 900 1
+save 300 10
+save 60 10000
+dbfilename dump.rdb
