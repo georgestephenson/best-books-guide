@@ -55,14 +55,14 @@ Playbooks sit next to `roles/` (not in a `playbooks/` subdir) so role resolution
 
 - ansible-core ≥ 2.19 (current line: 2.20/2.21), `ansible-lint` in CI, `--check --diff` supported by all roles.
 - **Vault**: passphrase lives in a GH environment secret (CI) and the admin password manager (local). Rotating any app secret = edit vault + `deploy.yml`.
-- **Bootstrap sequence** (documented once, scripted where possible): `terraform apply` → EIP into inventory → `site.yml` → certbot issue → `deploy.yml` → smoke test.
+- **Bootstrap sequence** (documented once, scripted where possible): `terraform apply` → instance ID into inventory → `site.yml` → certbot issue → `deploy.yml` → smoke test. Host access is over SSM (no SSH ingress), so the control node needs AWS creds + the `session-manager-plugin`.
 
 ## CI/CD (GitHub Actions)
 
 | Workflow | Trigger | Does |
 |---|---|---|
 | `ci.yml` | PRs + main | Parallel jobs over a cached `npm ci`: **(a)** lint + prettier + `tsc -b`, **(b)** Vitest unit + integration with coverage gates (PG+Redis service containers, migrations applied first), **(c)** build web+api → Playwright smoke (≤3 journeys; full e2e on main + nightly); `npm audit` (fail high); ansible-lint / tf fmt on those paths. **Budget: <7 min wall, tests <2 min** ([02 §Testing strategy](02-architecture.md)) |
-| `deploy.yml` | push to `main` (app paths) / manual | needs ci → **build release on `ubuntu-24.04-arm`** (arm64-native modules for Graviton) → tar (api dist + pruned prod node_modules + web dist + migrations) → OIDC → upload `release-<sha>.tar.gz` to releases bucket → `ansible-playbook deploy.yml` over SSH (env-protected) |
+| `deploy.yml` | push to `main` (app paths) / manual | needs ci → **build release on `ubuntu-24.04-arm`** (arm64-native modules for Graviton) → tar (api dist + pruned prod node_modules + web dist + migrations) → OIDC → upload `release-<sha>.tar.gz` to releases bucket → `ansible-playbook deploy.yml` (SSH tunnelled over SSM, env-protected) |
 | `terraform.yml` | infra paths | plan on PR / gated apply on main (above) |
 | `codeql.yml` + Dependabot | schedule/PRs | static analysis; dep/action/TF bumps (actions pinned by SHA) |
 

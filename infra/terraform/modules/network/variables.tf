@@ -14,7 +14,3 @@ variable "vpc_cidr" {
   default     = "10.0.0.0/16"
 }
 
-variable "admin_cidr" {
-  description = "CIDR allowed to reach SSH (22). Set to your admin IP, e.g. 203.0.113.4/32."
-  type        = string
-}

@@ -1,9 +1,6 @@
 # Copy to terraform.tfvars (gitignored) and fill in.
 # Defaults cover region/project/domain/instance — see variables.tf.
 
-# Your admin IP as a /32, allowed to SSH to the host.
-admin_cidr = "203.0.113.4/32"
-
 # Public key material for the admin SSH key pair (Ansible access).
 # e.g. contents of ~/.ssh/bestbooks_ed25519.pub
 ssh_public_key = "ssh-ed25519 AAAA... you@host"

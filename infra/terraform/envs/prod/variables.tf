@@ -28,10 +28,6 @@ variable "instance_type" {
   default     = "t4g.small"
 }
 
-variable "admin_cidr" {
-  description = "CIDR allowed to SSH to the host (your admin IP, e.g. 203.0.113.4/32)."
-  type        = string
-}
 
 variable "ssh_public_key" {
   description = "SSH public key material for the admin key pair."
