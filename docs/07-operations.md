@@ -30,7 +30,8 @@ infra/terraform/
 
 - **Versions**: Terraform ≥ 1.12, AWS provider `~> 6.0`, both pinned; Dependabot bumps them.
 - **State**: S3 backend with `use_lockfile = true` (native S3 locking — the DynamoDB lock table is legacy practice as of TF 1.11+).
-- **Workflow**: PR touching `infra/terraform/**` → `fmt -check`, `validate`, `tflint`, `plan` posted to the PR. Apply runs on merge to `main` gated by the `production` GH environment (manual approval click). Monthly scheduled `plan` detects drift.
+- **Workflow (current)**: `terraform.yml` on PR/push touching `infra/terraform/**` runs **static checks only** — `fmt -check`, `validate`, `tflint` (no AWS credentials). **Apply is manual/local**: an admin runs `terraform apply` from their machine, then commits the change. This is the reverse of the app's merge→deploy flow, and its weakness is drift if apply and commit diverge.
+- **Workflow (target — not built; a follow-up)**: `plan` posted to the PR, gated apply on merge to `main` via the `production` environment, monthly scheduled `plan` for drift. Deferred because CI-driven apply needs an OIDC role that can create/destroy VPC/EC2/IAM (near-admin) — the M1 CI role is deliberately scoped to deploys only. Widening it is an ADR-worthy security decision ([TODO](../TODO.md)).
 - **CI auth**: OIDC role from bootstrap; `id-token: write`; role trust locked to this repo + environment. No AWS keys in GitHub.
 
 ## Ansible

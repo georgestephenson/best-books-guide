@@ -31,6 +31,7 @@ Auth needs the datastores the walking skeleton skipped, so the deferred Ansible 
 - [ ] After 26.04.1 (≈Aug 2026): consider Ubuntu 26.04 LTS via host rebuild
 - [ ] Once instance type settles: 1-yr Compute Savings Plan
 - [ ] Pin third-party GitHub Actions to commit SHAs (Dependabot manages the bumps)
+- [ ] Move Terraform `plan`/`apply` into CI (plan-on-PR, gated apply-on-`main`, scheduled drift `plan`) — currently apply is manual/local. Needs a broader OIDC role (create/destroy VPC/EC2/IAM) → **write an ADR** first; that's a real privilege escalation for CI
 
 ## Done
 
