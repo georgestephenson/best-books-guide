@@ -1,6 +1,6 @@
 # 08 — Delivery plan
 
-_Last updated: 2026-07-11 · Status: Accepted_
+_Last updated: 2026-07-15 · Status: Accepted_
 
 Strategy: **walking skeleton first** — the entire pipeline (Terraform → Ansible → CI/CD → Monit → HTTPS hello-world) ships before any feature. After that, every milestone is a vertical slice deployed to production the day it's done. Sizes are relative (S < M < L), not dates — this ships at the pace of available evenings.
 
@@ -10,19 +10,22 @@ Strategy: **walking skeleton first** — the entire pipeline (Terraform → Ansi
 
 Repo, licence, this design suite, ADRs 0001–0008, CLAUDE.md, TODO.md.
 
-## M1 — Walking skeleton [M] ← in progress
+## M1 — Walking skeleton [M] ✅ (2026-07-15)
 
-The riskiest integrations, done while the app is trivial. App half first (verifiable locally), then the infra pipeline (needs the AWS account).
+The riskiest integrations, done while the app is trivial. App half first (verifiable locally), then the infra pipeline. **Live: `https://bestbooks.guide/healthz`.**
 
-- ✅ Monorepo scaffold (npm workspaces, TS strict, ESLint 9 + Prettier, Vitest **with coverage gates wired from the first commit**, commitlint + husky) — `apps/api` serving `/healthz` through the clean-arch layers, `apps/web` page calling it via the shared contract, `packages/shared` proving the type loop. _(branch `feat/m1-walking-skeleton`, 2026-07-12)_
-- ✅ `ci.yml`: lint · format · typecheck / test + coverage gates / build / audit / PR-title commitlint.
-- ⏳ Domain ✅ registered in Route53; DNS + Let's Encrypt still to wire on the host.
-- ⏳ Terraform: bootstrap (state bucket, OIDC role, budget alarm) then `envs/prod` (VPC, EC2, EIP, buckets, zone import, SES identity).
-- ⏳ Ansible `site.yml` converges the host end-to-end; `deploy.yml` ships releases.
-- ⏳ `deploy.yml` + `terraform.yml` workflows green; branch protection on.
-- ⏳ Monit checks + SES SMTP alert (to own inbox, sandbox is fine); external uptime ping.
+- ✅ Monorepo scaffold (npm workspaces, TS strict, ESLint 9 + Prettier, Vitest **with coverage gates wired from the first commit**, commitlint + husky) — `apps/api` serving `/healthz` through the clean-arch layers, `apps/web` page calling it via the shared contract, `packages/shared` proving the type loop.
+- ✅ `ci.yml`: lint · format · typecheck / test + coverage gates / build / audit / PR-title commitlint. Dependabot (npm/actions/terraform) + branch protection on.
+- ✅ Terraform: bootstrap (state bucket, OIDC role, budget alarm) + `envs/prod` (VPC, EC2, EIP, buckets, SES identity; hosted zone looked up, not imported).
+- ✅ Ansible `site.yml` converges the host (common/nodejs/nginx/app/monit); `deploy.yml` ships releases. PostgreSQL/Redis/backup roles deferred to M2 (no datastore yet).
+- ✅ `deploy.yml` + `terraform.yml` workflows green.
+- ✅ Monit watches api/nginx/system + public HTTPS, alerts via SES SMTP; UptimeRobot external ping ([status page](https://stats.uptimerobot.com/1mUEBA341u)).
 
-**Exit criteria**: push to `main` → live at `https://bestbooks.guide/healthz` in <10 min with zero manual steps; one rollback rehearsed; one Monit alert received (kill the API process, watch it restart + email).
+**Exit criteria — all met:** push to `main` → live in <10 min zero-touch (✅ ~48s); rollback rehearsed (✅ both directions, one command); Monit alert (✅ kill → restart → email).
+
+**Host access is SSM-only** — no inbound SSH. An IP allowlist was unworkable (dynamic CI runners; the admin's IP rotates), so both CI and admin tunnel SSH over SSM, authorised by IAM ([06 §Route53/SG](06-infrastructure.md)). Adopting this after a broken first attempt is why M1 diverged from the plan here.
+
+**What only live drills caught** (green linters never would): SG rule descriptions reject apostrophes; `stdout_callback = yaml` removed from community.general 12; `awscli` gone from Ubuntu 24.04 repos; nginx 1.24 rejects `http2 on`; **Monit never started** (idfile on a read-only FS — 48h unwatched); Monit SES TLS (587/STARTTLS → 465/SSL) + sandbox recipient verification; **CI could never SSH in** (→ SSM); passphrase-protected key unusable in CI (→ separate deploy key); a security-group description edit forcing a replace-deadlock outage (→ `create_before_destroy`). The lesson: **prove it live; don't trust a green pipeline.**
 
 ## M2 — Accounts & auth [M]
 

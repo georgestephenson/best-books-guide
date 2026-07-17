@@ -23,5 +23,6 @@ Best Books Guide: a curated, opinionated best-books-by-subject site. React 19/Vi
 - **Domain**: `bestbooks.guide` — registered and DNS-hosted in Route53 (2026-07-12). GitHub repo: `best-books-guide`.
 - **Region**: `eu-west-2` (confirmed) — a Terraform variable if it changes.
 - Production is a **single EC2 host, no containers** (ADR-0006/0007) — don't introduce Docker/managed stores without revisiting those ADRs.
+- **Host access is SSM-only** — no inbound SSH (port 22 closed). Reach the host by tunnelling SSH over SSM (`aws ssm start-session --target <instance-id>`); CI does the same via its OIDC role. Don't add an SSH ingress rule back.
 - **The product is anti-noise by principle** ([docs/01 §Principles](docs/01-product.md)): run feature ideas through the noise test. Follows/feeds, review comments, tracking-based recommendations, and ads are philosophy-gated. Notifications, digests, badges, and streaks are allowed **only** opt-in + quiet + done well; recommendations come only from the curated catalogue (same author, co-listed, curation-graph similarity), never from reader tracking.
-- Current phase: **M1 walking skeleton** (see delivery plan) — pipeline before features.
+- Current phase: **M2 — accounts & auth** (M1 walking skeleton shipped 2026-07-15; `bestbooks.guide/healthz` live, self-deploying from `main`). PostgreSQL/Redis/backup Ansible roles are deferred M1 work that lands early in M2.

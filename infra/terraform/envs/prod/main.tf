@@ -7,7 +7,6 @@ module "network" {
 
   project    = var.project
   aws_region = var.aws_region
-  admin_cidr = var.admin_cidr
 }
 
 module "storage" {

@@ -65,11 +65,21 @@ resource "aws_vpc_endpoint" "s3" {
 }
 
 resource "aws_security_group" "web" {
-  name        = "${var.project}-web"
-  description = "Public web (80/443) and admin SSH (22)."
+  # name_prefix + create_before_destroy: a security group's description is
+  # immutable, so editing it replaces the whole SG. Replacing in place deadlocks
+  # (AWS won't delete an SG still attached to the instance, so Terraform retries
+  # for ~15 min while the rules are already gone — an outage). Creating the
+  # replacement first, moving the instance onto it, then deleting the old one
+  # avoids that. name_prefix is required because SG names must be unique.
+  name_prefix = "${var.project}-web-"
+  description = "Public web (80/443) only."
   vpc_id      = aws_vpc.main.id
 
   tags = { Name = "${var.project}-web" }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_vpc_security_group_ingress_rule" "http_ipv4" {
@@ -108,14 +118,6 @@ resource "aws_vpc_security_group_ingress_rule" "https_ipv6" {
   cidr_ipv6         = "::/0"
 }
 
-resource "aws_vpc_security_group_ingress_rule" "ssh_admin" {
-  security_group_id = aws_security_group.web.id
-  description       = "SSH from the admin IP only (Ansible)"
-  ip_protocol       = "tcp"
-  from_port         = 22
-  to_port           = 22
-  cidr_ipv4         = var.admin_cidr
-}
 
 resource "aws_vpc_security_group_egress_rule" "all_ipv4" {
   security_group_id = aws_security_group.web.id

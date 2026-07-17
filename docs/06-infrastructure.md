@@ -41,7 +41,19 @@ Security group `web`:
 | Port | Source | Purpose |
 |---|---|---|
 | 443, 80 | 0.0.0.0/0, ::/0 | HTTPS + ACME/redirect |
-| 22 | `var.admin_cidr` (your IP) | SSH for Ansible; tighten/rotate as needed. SSM Session Manager is the documented keyless alternative if the IP dance gets old |
+
+**No SSH ingress.** Both the admin and CI reach the host by tunnelling SSH over
+**SSM Session Manager**, authorised by IAM rather than by source IP. An IP allowlist
+was never workable — GitHub's runners have dynamic addresses, and the admin's own IP
+rotates (it locked us out once). The instance role carries `AmazonSSMManagedInstanceCore`;
+the agent ships with the Ubuntu AMI. Ansible targets the **instance ID** via a
+ProxyCommand (see the inventory). Break-glass with no ingress at all:
+`aws ssm start-session --target <instance-id>`.
+
+The SG uses `name_prefix` + `create_before_destroy`: a security group's `description`
+is immutable, so editing it replaces the whole SG — and an in-place replace deadlocks
+(AWS won't delete an SG that's still attached, while its rules are already gone). This
+took the site down once; don't remove that lifecycle block.
 
 Egress: open (OL imports, apt, Let's Encrypt, SES).
 
