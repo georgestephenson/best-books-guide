@@ -13,6 +13,7 @@ import { authRoutes, type AuthRoutesDeps } from './routes/auth.js';
 import { meRoutes, type MeRoutesDeps } from './routes/me.js';
 import { catalogueRoutes, type CatalogueRoutesDeps } from './routes/catalogue.js';
 import { sitemapRoutes, type SitemapRoutesDeps } from './routes/sitemap.js';
+import { adminRoutes, type AdminRoutesDeps } from './routes/admin.js';
 import { problemFromError } from './problem.js';
 
 export interface ServerDeps {
@@ -24,6 +25,7 @@ export interface ServerDeps {
   me?: MeRoutesDeps;
   catalogue?: CatalogueRoutesDeps;
   sitemap?: SitemapRoutesDeps;
+  admin?: AdminRoutesDeps;
 }
 
 // docs/05 §HTTP headers. Helmet owns headers on API (/api/*) responses; Nginx owns
@@ -82,6 +84,9 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   if (deps.sitemap) {
     // Root-mounted: sitemap.xml / robots.txt live at the site root, not under /api/v1.
     void app.register(sitemapRoutes(deps.sitemap));
+  }
+  if (deps.admin) {
+    void app.register(adminRoutes(deps.admin), { prefix: `${API_BASE_PATH}/admin` });
   }
 
   app.setNotFoundHandler((request, reply) => {

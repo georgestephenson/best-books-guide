@@ -15,6 +15,7 @@ import { SubjectPage } from './SubjectPage.js';
 import { ListPage } from './ListPage.js';
 import { BookPage } from './BookPage.js';
 import { SeriesPage } from './SeriesPage.js';
+import { NotFoundPage } from './NotFoundPage.js';
 
 const V1 = API_BASE_PATH;
 
@@ -210,6 +211,14 @@ describe('SeriesPage', () => {
     const items = within(list).getAllByRole('listitem');
     expect(items[0]).toHaveTextContent('A Study in Scarlet');
     expect(items[1]).toHaveTextContent('The Sign of the Four');
+  });
+});
+
+describe('NotFoundPage', () => {
+  it('renders a calm 404 with a way back', async () => {
+    renderApp(<NotFoundPage />);
+    expect(await screen.findByRole('heading', { name: /doesn.t exist/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /back to browse/i })).toHaveAttribute('href', '/');
   });
 });
 

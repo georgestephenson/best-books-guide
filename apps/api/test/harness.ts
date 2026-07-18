@@ -6,6 +6,8 @@ import { buildServer } from '../src/http/server.js';
 import { composeServerDeps } from '../src/composition.js';
 import { loadConfig } from '../src/config.js';
 import type { EmailMessage, EmailSender } from '../src/app/ports/email-sender.js';
+import type { OpenLibraryClient } from '../src/app/ports/open-library-client.js';
+import type { ImageStore } from '../src/app/ports/image-store.js';
 import { TEST_DATABASE_URL, TEST_REDIS_URL } from './env.js';
 
 /** Captures sent email so tests can read back verification/reset tokens. */
@@ -67,12 +69,19 @@ export interface TestServer {
   emails: EmailMessage[];
 }
 
+export interface TestServerOverrides {
+  openLibrary?: OpenLibraryClient;
+  imageStore?: ImageStore;
+}
+
 /** A full Fastify app wired to the real test stores, for `.inject()` integration tests. */
-export function buildTestServer(): TestServer {
+export function buildTestServer(overrides: TestServerOverrides = {}): TestServer {
   const { db, pool } = testDb();
   const redis = testRedis();
   const config = loadConfig({ NODE_ENV: 'test', APP_VERSION: 'test' });
   const emailSender = new CapturingEmailSender();
-  const app = buildServer(composeServerDeps({ config, db, pool, redis, emailSender }));
+  const app = buildServer(
+    composeServerDeps({ config, db, pool, redis, emailSender, ...overrides }),
+  );
   return { app, emails: emailSender.sent };
 }

@@ -3,11 +3,18 @@ import type { Redis } from 'ioredis';
 import type { Config } from './config.js';
 import type { Database } from './infra/db/pool.js';
 import type { EmailSender } from './app/ports/email-sender.js';
+import type { OpenLibraryClient } from './app/ports/open-library-client.js';
+import type { ImageStore } from './app/ports/image-store.js';
 import { SystemClock } from './infra/clock.js';
 import { PgHealthProbe } from './infra/db/pg-health-probe.js';
 import { RedisHealthProbe } from './infra/redis/redis-health-probe.js';
 import { DrizzleUserRepository } from './infra/db/drizzle-user-repository.js';
 import { DrizzleCatalogueRepository } from './infra/db/drizzle-catalogue-repository.js';
+import { DrizzleAdminCatalogueRepository } from './infra/db/drizzle-admin-catalogue-repository.js';
+import { DrizzleAdminCurationRepository } from './infra/db/drizzle-admin-curation-repository.js';
+import { RedisCache } from './infra/redis/redis-cache.js';
+import { FsImageStore } from './infra/media/fs-image-store.js';
+import { FetchOpenLibraryClient } from './infra/openlibrary/fetch-open-library-client.js';
 import { RedisSessionStore } from './infra/redis/redis-session-store.js';
 import { RedisOneTimeTokenStore } from './infra/redis/redis-one-time-token-store.js';
 import { RedisRateLimiter } from './infra/redis/redis-rate-limiter.js';
@@ -38,6 +45,38 @@ import { GetBooks } from './app/usecases/get-books.js';
 import { GetBook } from './app/usecases/get-book.js';
 import { GetSeries } from './app/usecases/get-series.js';
 import { GetSitemap } from './app/usecases/get-sitemap.js';
+import {
+  CreateBook,
+  DeleteBook,
+  GetAdminBook,
+  ImportBook,
+  ListAdminBooks,
+  SearchOpenLibrary,
+  UpdateBook,
+} from './app/usecases/admin-books.js';
+import {
+  CreateSubject,
+  DeleteSubject,
+  ListSubjects,
+  ReorderSubjects,
+  UpdateSubject,
+} from './app/usecases/admin-subjects.js';
+import {
+  CreateList,
+  DeleteList,
+  GetAdminList,
+  ListAdminLists,
+  SetListItems,
+  UpdateList,
+} from './app/usecases/admin-lists.js';
+import {
+  CreateSeries,
+  DeleteSeries,
+  GetAdminSeries,
+  ListAdminSeries,
+  SetSeriesBooks,
+  UpdateSeries,
+} from './app/usecases/admin-series.js';
 import { createAuthGuards } from './http/auth-guards.js';
 import type { ServerDeps } from './http/server.js';
 
@@ -48,6 +87,9 @@ export interface CompositionInput {
   redis: Redis;
   /** Override the email transport (integration tests inject a capturing fake). */
   emailSender?: EmailSender;
+  /** Override Open Library / cover storage (tests inject fakes so no network/fs). */
+  openLibrary?: OpenLibraryClient;
+  imageStore?: ImageStore;
 }
 
 /**
@@ -61,6 +103,11 @@ export function composeServerDeps(input: CompositionInput): ServerDeps {
   const clock = new SystemClock();
   const users = new DrizzleUserRepository(db);
   const catalogue = new DrizzleCatalogueRepository(db);
+  const adminCatalogue = new DrizzleAdminCatalogueRepository(db);
+  const adminCuration = new DrizzleAdminCurationRepository(db);
+  const cache = new RedisCache(redis);
+  const imageStore = input.imageStore ?? new FsImageStore(config.MEDIA_DIR);
+  const openLibrary = input.openLibrary ?? new FetchOpenLibraryClient(config.OPENLIBRARY_BASE_URL);
   const sessions = new RedisSessionStore(redis);
   const oneTimeTokens = new RedisOneTimeTokenStore(redis);
   const rateLimiter = new RedisRateLimiter(redis);
@@ -174,6 +221,38 @@ export function composeServerDeps(input: CompositionInput): ServerDeps {
     sitemap: {
       getSitemap: new GetSitemap(catalogue),
       publicBaseUrl,
+    },
+    admin: {
+      guards,
+      searchOpenLibrary: new SearchOpenLibrary({ ol: openLibrary, cache }),
+      importBook: new ImportBook({
+        repo: adminCatalogue,
+        ol: openLibrary,
+        images: imageStore,
+        coversBaseUrl: config.OPENLIBRARY_COVERS_URL,
+      }),
+      listBooks: new ListAdminBooks(adminCatalogue),
+      createBook: new CreateBook(adminCatalogue),
+      getBook: new GetAdminBook(adminCatalogue),
+      updateBook: new UpdateBook(adminCatalogue),
+      deleteBook: new DeleteBook(adminCatalogue),
+      listSubjects: new ListSubjects(adminCatalogue),
+      createSubject: new CreateSubject(adminCatalogue),
+      updateSubject: new UpdateSubject(adminCatalogue),
+      deleteSubject: new DeleteSubject(adminCatalogue),
+      reorderSubjects: new ReorderSubjects(adminCatalogue),
+      listLists: new ListAdminLists(adminCuration),
+      createList: new CreateList(adminCuration),
+      getList: new GetAdminList(adminCuration),
+      updateList: new UpdateList(adminCuration),
+      deleteList: new DeleteList(adminCuration),
+      setListItems: new SetListItems(adminCuration),
+      listSeries: new ListAdminSeries(adminCuration),
+      createSeries: new CreateSeries(adminCuration),
+      getSeries: new GetAdminSeries(adminCuration),
+      updateSeries: new UpdateSeries(adminCuration),
+      deleteSeries: new DeleteSeries(adminCuration),
+      setSeriesBooks: new SetSeriesBooks(adminCuration),
     },
   };
 }
