@@ -21,8 +21,13 @@ data "aws_ami" "ubuntu" {
 }
 
 locals {
-  ami_id           = var.ami_id != null ? var.ami_id : data.aws_ami.ubuntu[0].id
-  ses_identity_arn = "arn:aws:ses:${var.aws_region}:${data.aws_caller_identity.current.account_id}:identity/${var.domain_name}"
+  ami_id = var.ami_id != null ? var.ami_id : data.aws_ami.ubuntu[0].id
+  # SendEmail must be authorized against every SES identity in the request. In the
+  # SES sandbox that includes the *recipient* identities (verified inboxes), each its
+  # own ARN — not just the domain From-identity — so scope to all identities in this
+  # account+region. Still least-privilege to SES (not "*"), and correct once out of
+  # the sandbox too, where only the domain identity is involved (docs/06 §EC2 host).
+  ses_send_resource = "arn:aws:ses:${var.aws_region}:${data.aws_caller_identity.current.account_id}:identity/*"
 }
 
 resource "aws_key_pair" "admin" {
@@ -71,7 +76,7 @@ resource "aws_iam_role_policy" "instance" {
         Sid      = "SesSend"
         Effect   = "Allow"
         Action   = ["ses:SendEmail", "ses:SendRawEmail"]
-        Resource = local.ses_identity_arn
+        Resource = local.ses_send_resource
       },
     ]
   })
