@@ -11,6 +11,8 @@ import { RateLimitedError } from '../domain/errors.js';
 import { healthRoutes } from './routes/health.js';
 import { authRoutes, type AuthRoutesDeps } from './routes/auth.js';
 import { meRoutes, type MeRoutesDeps } from './routes/me.js';
+import { catalogueRoutes, type CatalogueRoutesDeps } from './routes/catalogue.js';
+import { sitemapRoutes, type SitemapRoutesDeps } from './routes/sitemap.js';
 import { problemFromError } from './problem.js';
 
 export interface ServerDeps {
@@ -20,6 +22,8 @@ export interface ServerDeps {
   // the integration harness always supply them.
   auth?: AuthRoutesDeps;
   me?: MeRoutesDeps;
+  catalogue?: CatalogueRoutesDeps;
+  sitemap?: SitemapRoutesDeps;
 }
 
 // docs/05 §HTTP headers. Helmet owns headers on API (/api/*) responses; Nginx owns
@@ -71,6 +75,13 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   }
   if (deps.me) {
     void app.register(meRoutes(deps.me), { prefix: `${API_BASE_PATH}/me` });
+  }
+  if (deps.catalogue) {
+    void app.register(catalogueRoutes(deps.catalogue), { prefix: API_BASE_PATH });
+  }
+  if (deps.sitemap) {
+    // Root-mounted: sitemap.xml / robots.txt live at the site root, not under /api/v1.
+    void app.register(sitemapRoutes(deps.sitemap));
   }
 
   app.setNotFoundHandler((request, reply) => {

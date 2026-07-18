@@ -27,4 +27,9 @@ export interface UserRepository {
   markEmailVerified(id: string, at: Date): Promise<void>;
   updatePasswordHash(id: string, passwordHash: string): Promise<void>;
   updateDisplayName(id: string, displayName: string): Promise<UserRecord>;
+  /**
+   * Grant the admin role by email (the `promote-admin` runbook — docs/07). Returns
+   * the updated record, or `null` if no user has that email. Case-insensitive.
+   */
+  promoteToAdmin(email: string): Promise<UserRecord | null>;
 }

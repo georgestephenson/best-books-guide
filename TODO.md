@@ -2,19 +2,24 @@
 
 Canonical task list — see [CLAUDE.md](CLAUDE.md) for how this file is used. Roadmap detail lives in [docs/08-delivery-plan.md](docs/08-delivery-plan.md).
 
-**M1 walking skeleton is shipped** (2026-07-15) — `bestbooks.guide/healthz` live, self-deploying from `main`. Now on **M2 — accounts & auth**.
+**M1 & M2 shipped** — `bestbooks.guide/healthz` live, self-deploying from `main`; accounts & auth deployed (M2). Now on **M3 — catalogue & curation**.
 
-## Now (M2 — ship it)
+## Now (M3 — catalogue & curation)
 
-M2 is **built and CI-green on `feat/m2-host-data-stores`** (see Done). What's left is getting it onto prod:
+L-sized, multi-PR. Sequence: **public-browsing first** (reach the exit criterion fastest), then admin tooling. Plan: public-domain seed content only — real editorial picks never go in source control. Full slicing in [docs/08 §M3](docs/08-delivery-plan.md).
 
-- [ ] Populate the vault: `vault_db_password`, `vault_jwt_secret` (`ansible-vault create/edit group_vars/all/vault.yml`) — needed before both playbooks
-- [ ] Converge the host from the branch: `ansible-playbook site.yml` (installs postgresql/redis/backup, renders the new `.env`) — the old app keeps serving; no schema yet
-- [ ] Merge `feat/m2-host-data-stores` → `main` → approve the gated deploy (pre-migration `pg_dump` → `migrate.js` → app). **Order matters: `site.yml` before the merge**, or the new app boots with no DB and rolls back
-- [ ] Verify the full auth lifecycle on `https://bestbooks.guide` (SES sandbox → your own verified inbox)
+- [ ] **Slice 1 — Catalogue foundation** (`feat/m3-catalogue-foundation`): Drizzle schema (subjects/authors/books/book_authors/book_subjects/series/lists/list_items) + hand-augmented migration 0001 (partial uniques, deferred rank, `num_nonnulls` check, GIN trgm, indexes); `CatalogueRepository` read port + adapter + PG integration tests; `promote-admin` CLI + runbook. No UI.
+- [ ] **Slice 2 — Public read API**: shared contracts; use-cases + `/api/v1` catalogue routes (subjects/list/books/book/series); `sitemap.xml`/`robots.txt` + nginx proxy locations.
+- [ ] **Slice 3 — Public SPA**: home/subject/list/book/series pages; React 19 metadata + JSON-LD; Lighthouse ≥90.
+- [ ] **Slice 4 — Seed 3 real lists** (public-domain) → **M3 exit criteria met** (visitor browses real lists on prod).
+- [ ] **Slice 5 — Admin catalogue CRUD + OL import** (port + recorded fixtures; covers → media dir).
+- [ ] **Slice 6 — Admin list/series builder** (drag-rank, blurbs, sublists, publish toggle).
+
+## Carry-over / follow-ups (from M1–M2)
+
 - [ ] Submit the **SES production-access** request (lead time ~24h+; blocks M5) — until then, mail only reaches verified identities
 - [ ] Enable **CodeQL** (add `codeql.yml`) — carried over from the M1 repo-settings checklist
-- [ ] Follow-up: import the full SecLists top-10k into `apps/api/src/infra/security/breached-passwords.data.ts` (currently a curated seed)
+- [ ] Import the full SecLists top-10k into `apps/api/src/infra/security/breached-passwords.data.ts` (currently a curated seed)
 
 ## Later (scheduled reminders)
 
@@ -29,6 +34,7 @@ M2 is **built and CI-green on `feat/m2-host-data-stores`** (see Done). What's le
 
 ## Done
 
+- [x] 2026-07-18 — **M2 accounts & auth SHIPPED** 🚀 — host converged (postgresql/redis/backup roles), migration 0001 applied via the gated deploy, full auth lifecycle verified on `https://bestbooks.guide` (SES sandbox → verified inbox)
 - [x] 2026-07-18 — **M2 accounts & auth BUILT** (on `feat/m2-host-data-stores`, CI-green locally, not yet deployed): `postgresql`/`redis`/`backup` Ansible roles + env/vault keys; Drizzle + migration 0001 (users, citext/pg_trgm) + advisory-locked `dist/migrate.js` + pre-migration `pg_dump` in deploy; CI PG18/Redis8 service containers + dev `docker-compose`; full auth lifecycle (register → verify → login → refresh w/ reuse detection + 10s grace window → logout → reset), `/me`, rate limits (429 + Retry-After), Argon2id, helmet CSP + nginx hardening, `@fastify/swagger`; SPA auth (React Router 7, in-memory token + single-flight silent refresh, register/login/verify/reset pages, auth context). ADR-0009; docs/03/04/05/07 amended. 114 tests, ~94% coverage
 - [x] 2026-07-15 — **M1 walking skeleton SHIPPED** 🚀 — live at `bestbooks.guide/healthz`, self-deploys from `main` in ~48s with zero manual steps. Terraform (bootstrap + envs/prod) + Ansible (common/nodejs/nginx/app/monit) + deploy/terraform/CI workflows + Dependabot. Monit watchdog + SES alerts, rollback rehearsed both directions, UptimeRobot external ping. ~11 real bugs shaken out by live drills (catalogued in [docs/08](docs/08-delivery-plan.md))
 - [x] 2026-07-15 — Adopted **SSM** for host access (SSH tunnelled over SSM, IAM-authorised); closed port 22 and dropped `admin_cidr`

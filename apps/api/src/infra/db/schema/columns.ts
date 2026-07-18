@@ -1,4 +1,4 @@
-import { customType } from 'drizzle-orm/pg-core';
+import { customType, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { sql, type SQL } from 'drizzle-orm';
 
 /**
@@ -20,3 +20,17 @@ export const citext = customType<{ data: string }>({
 export function uuidv7Default(): SQL {
   return sql`uuidv7()`;
 }
+
+/**
+ * Shared column shapes for the catalogue tables (docs/03 §conventions), spelled out
+ * once so the eight M3 tables don't each re-declare the same PK/timestamp boilerplate.
+ * `users` (migration 0000) predates these and stays inlined — no churn for churn's sake.
+ */
+export const pkId = () => uuid('id').primaryKey().default(uuidv7Default());
+export const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
+export const updatedAt = () =>
+  timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    // App-maintained on every update (docs/03) — no trigger, same as users.
+    .$onUpdate(() => sql`now()`);

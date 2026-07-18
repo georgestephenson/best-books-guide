@@ -118,4 +118,15 @@ Plus an **external** uptime ping (UptimeRobot free tier or similar) because Moni
 3. **Rebuild host from zero**: TF apply (new EIP → DNS) → `site.yml` → restore DB + media sync-back → `deploy.yml` → verify. Target ≤ 2h (the RTO).
 4. **Incident triage**: Monit summary → `systemctl status` → journalctl of the failing unit → `df -h` / `free -h` / `top` → this doc's owner fixes forward or rolls back. Postmortem note in `docs/incidents/` if user-visible.
 5. **Rotate secrets**: vault edit → `deploy.yml` (JWT secret uses dual-secret window: add new, deploy, drop old next deploy).
-6. **Promote admin**: `sudo -u bestbooks node …/cli.js promote-admin <email>` (or documented SQL).
+6. **Promote admin** (no admin signup path — docs/03): as the app user, sourcing the deployed env (only `DATABASE_URL` is needed; every other config key has a schema default):
+   ```
+   sudo -u bestbooks bash -c 'set -a; . /srv/bestbooks/shared/.env; \
+     node /srv/bestbooks/current/apps/api/dist/promote-admin.js <email>'
+   ```
+   Idempotent; exits non-zero if no user has that email. Locally it's `npm -w apps/api run promote-admin -- <email>`.
+7. **Seed the catalogue** (public-domain content, docs/03 §seeds): same env-sourcing as above, running the compiled seed CLI:
+   ```
+   sudo -u bestbooks bash -c 'set -a; . /srv/bestbooks/shared/.env; \
+     node /srv/bestbooks/current/apps/api/dist/seed-catalogue.js'
+   ```
+   Idempotent (upserts by slug). Locally it's `npm -w apps/api run seed:catalogue`. Editorial content proper is added via the admin UI, not here.

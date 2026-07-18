@@ -77,6 +77,19 @@ server {
         expires 30d;
     }
 
+    # sitemap.xml / robots.txt are served by the API from published slugs (docs/04);
+    # exact-match so they take precedence over the SPA fallback below.
+    location = /sitemap.xml {
+        proxy_pass http://127.0.0.1:{{ app_port }};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location = /robots.txt {
+        proxy_pass http://127.0.0.1:{{ app_port }};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
     # SPA fallback.
     location / {
         try_files $uri $uri/ /index.html;

@@ -1,48 +1,104 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
-import { fetchHealth } from './lib/api.js';
-import { HealthBadge, type HealthBadgeState } from './features/health/HealthBadge.js';
-import { useAuth } from './features/auth/AuthContext.js';
+import type { SubjectDetail } from '@bestbooks/shared';
+import { catalogueKeys, fetchSubjects } from './features/catalogue/api.js';
+import {
+  Crumbs,
+  ErrorBlock,
+  JsonLd,
+  LoadingBlock,
+  PageMeta,
+  PublicLayout,
+} from './features/catalogue/components.js';
 
-/** The home route: the M1 health check plus an auth-aware greeting. */
+function SubjectSection({ subject }: { subject: SubjectDetail }) {
+  return (
+    <section className="border-t border-line py-9 first:border-t-0 first:pt-0">
+      <div className="flex items-baseline justify-between gap-4">
+        <h2 className="font-serif text-2xl font-semibold tracking-tight">
+          <Link className="text-ink hover:text-accent" to={`/subjects/${subject.slug}`}>
+            {subject.name}
+          </Link>
+        </h2>
+        <span className="eyebrow whitespace-nowrap">
+          {subject.lists.length} {subject.lists.length === 1 ? 'list' : 'lists'}
+        </span>
+      </div>
+      {subject.description ? (
+        <p className="mt-2 max-w-2xl text-muted">{subject.description}</p>
+      ) : null}
+      <ul className="mt-5 grid gap-3">
+        {subject.lists.map((list) => (
+          <li key={list.slug}>
+            <Link
+              className="group flex items-baseline gap-3 rounded-md border border-line bg-panel px-4 py-3 transition-colors hover:border-accent"
+              to={`/lists/${list.slug}`}
+            >
+              <span className="font-serif text-lg font-semibold text-ink group-hover:text-accent">
+                {list.title}
+              </span>
+              <span className="font-sans text-xs text-faint">{list.itemCount} books</span>
+              {list.intro ? (
+                <span className="ml-auto hidden max-w-sm truncate font-sans text-sm text-muted sm:block">
+                  {list.intro}
+                </span>
+              ) : null}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** Home: the browse entry point — subjects and their curated lists (docs/04 GET /subjects). */
 export function App() {
-  const { status: authStatus, user, logout } = useAuth();
-  const { data, status } = useQuery({ queryKey: ['health'], queryFn: fetchHealth });
-  const badgeState: HealthBadgeState =
-    status === 'pending' ? 'loading' : status === 'error' ? 'error' : 'ready';
+  const { data, status, error } = useQuery({
+    queryKey: catalogueKeys.subjects,
+    queryFn: fetchSubjects,
+  });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center gap-4 px-6">
-      <h1 className="text-3xl font-bold tracking-tight text-slate-900">Best Books Guide 📚</h1>
-      <p className="text-slate-600">
-        Walking skeleton. The catalogue arrives in M3 — for now this page proves the browser can
-        reach the API and hold a session.
-      </p>
+    <PublicLayout>
+      <PageMeta
+        title="Best Books Guide — the best books by subject"
+        description="A curated, opinionated guide to the best books by subject. An editor picks, ranks, and says why — so you can decide what to read next."
+      />
+      <JsonLd
+        data={{
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: 'Best Books Guide',
+          description: 'The best books by subject — curated, ranked, and argued.',
+        }}
+      />
+      <Crumbs trail={[{ label: 'Home' }]} />
 
-      {authStatus === 'loading' ? (
-        <p className="text-slate-500">Restoring your session…</p>
-      ) : user ? (
-        <div className="flex items-center gap-3 text-slate-700">
-          <span>
-            Signed in as <strong>{user.displayName}</strong>
-            {user.emailVerifiedAt ? '' : ' (unverified)'}
-          </span>
-          <button className="underline" type="button" onClick={() => void logout()}>
-            Sign out
-          </button>
-        </div>
-      ) : (
-        <div className="flex gap-3 text-slate-700">
-          <Link className="underline" to="/login">
-            Sign in
-          </Link>
-          <Link className="underline" to="/register">
-            Create an account
-          </Link>
-        </div>
-      )}
+      <header className="max-w-2xl">
+        <p className="eyebrow">Curated by subject</p>
+        <h1 className="mt-2 text-balance font-serif text-4xl font-semibold leading-tight tracking-tight">
+          What should you read next?
+        </h1>
+        <p className="mt-4 text-lg text-muted">
+          Most book sites rank by popularity. This one is deliberately curated — each subject
+          stripped to the highest-quality, most authoritative books, ranked, with a note on why each
+          one earns its place.
+        </p>
+      </header>
 
-      <HealthBadge state={badgeState} health={data} />
-    </main>
+      <div className="mt-12">
+        {status === 'pending' ? (
+          <LoadingBlock label="Loading subjects…" />
+        ) : status === 'error' ? (
+          <ErrorBlock error={error} kind="page" />
+        ) : data.length === 0 ? (
+          <p className="max-w-xl text-muted">
+            The first curated lists are being written. Check back soon.
+          </p>
+        ) : (
+          data.map((subject) => <SubjectSection key={subject.slug} subject={subject} />)
+        )}
+      </div>
+    </PublicLayout>
   );
 }

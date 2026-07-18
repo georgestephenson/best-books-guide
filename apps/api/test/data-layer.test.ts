@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { HEALTH_PATH } from '@bestbooks/shared';
 import { users } from '../src/infra/db/schema/users.js';
+import { DrizzleUserRepository } from '../src/infra/db/drizzle-user-repository.js';
 import { testDb, testRedis, resetStores, closeStores, buildTestServer } from './harness.js';
 
 // drizzle wraps driver errors, so the SQLSTATE we care about is on `.cause.code`
@@ -70,6 +71,21 @@ describe('data layer (integration)', () => {
       }),
       '23514',
     );
+  });
+
+  it('promotes a user to admin by email, case-insensitively (promote-admin runbook)', async () => {
+    const { db } = testDb();
+    const repo = new DrizzleUserRepository(db);
+    await db
+      .insert(users)
+      .values({ email: 'editor@example.com', passwordHash: 'x', displayName: 'Editor' });
+
+    const promoted = await repo.promoteToAdmin('Editor@Example.com');
+    expect(promoted?.role).toBe('admin');
+
+    // Re-promoting is idempotent; an unknown email returns null (CLI exits non-zero).
+    expect((await repo.promoteToAdmin('editor@example.com'))?.role).toBe('admin');
+    expect(await repo.promoteToAdmin('nobody@example.com')).toBeNull();
   });
 
   it('reflects live stores through GET /healthz', async () => {
