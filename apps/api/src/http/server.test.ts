@@ -54,7 +54,7 @@ describe('unknown route', () => {
     const res = await app.inject({ method: 'GET', url: '/does-not-exist' });
     expect(res.statusCode).toBe(404);
     expect(res.headers['content-type']).toContain('application/problem+json');
-    expect(res.json()).toMatchObject({ status: 404, title: 'Error' });
+    expect(res.json()).toMatchObject({ status: 404, title: 'Not found' });
     await app.close();
   });
 });

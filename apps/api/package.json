@@ -13,13 +13,19 @@
     "clean": "rm -rf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
+    "@aws-sdk/client-sesv2": "^3.1090.0",
     "@bestbooks/shared": "*",
+    "@fastify/cookie": "^11.1.2",
     "@fastify/helmet": "^12.0.0",
+    "@fastify/swagger": "^9.8.1",
+    "@fastify/swagger-ui": "^5.2.6",
     "@fastify/type-provider-typebox": "^5.0.0",
+    "@node-rs/argon2": "^2.0.2",
     "@sinclair/typebox": "^0.34.52",
     "drizzle-orm": "^0.45.2",
     "fastify": "^5.0.0",
     "ioredis": "^5.4.0",
+    "jose": "^5.10.0",
     "pg": "^8.13.0"
   },
   "devDependencies": {

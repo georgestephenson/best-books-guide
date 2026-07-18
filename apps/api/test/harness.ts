@@ -2,13 +2,27 @@ import type { Redis } from 'ioredis';
 import type { FastifyInstance } from 'fastify';
 import { createDb, type DbHandle } from '../src/infra/db/pool.js';
 import { createRedis } from '../src/infra/redis/client.js';
-import { PgHealthProbe } from '../src/infra/db/pg-health-probe.js';
-import { RedisHealthProbe } from '../src/infra/redis/redis-health-probe.js';
-import { SystemClock } from '../src/infra/clock.js';
-import { GetHealth } from '../src/app/usecases/get-health.js';
 import { buildServer } from '../src/http/server.js';
+import { composeServerDeps } from '../src/composition.js';
 import { loadConfig } from '../src/config.js';
+import type { EmailMessage, EmailSender } from '../src/app/ports/email-sender.js';
 import { TEST_DATABASE_URL, TEST_REDIS_URL } from './env.js';
+
+/** Captures sent email so tests can read back verification/reset tokens. */
+export class CapturingEmailSender implements EmailSender {
+  readonly sent: EmailMessage[] = [];
+  send(message: EmailMessage): Promise<void> {
+    this.sent.push(message);
+    return Promise.resolve();
+  }
+}
+
+/** Pull the `token` query param out of an emailed link. */
+export function tokenFromEmail(message: EmailMessage): string {
+  const match = message.text.match(/[?&]token=([^\s&]+)/);
+  if (!match) throw new Error(`no token link in email: ${message.subject}`);
+  return decodeURIComponent(match[1]!);
+}
 
 // One connection per test file (vitest isolates module state per file); each file
 // closes them in afterAll via closeStores().
@@ -47,16 +61,18 @@ export async function closeStores(): Promise<void> {
   redisClient = undefined;
 }
 
-/** A Fastify app wired to the real test stores, for `.inject()` integration tests. */
-export function buildTestServer(): FastifyInstance {
-  const { pool } = testDb();
+export interface TestServer {
+  app: FastifyInstance;
+  /** Emails "sent" during the test, newest last. */
+  emails: EmailMessage[];
+}
+
+/** A full Fastify app wired to the real test stores, for `.inject()` integration tests. */
+export function buildTestServer(): TestServer {
+  const { db, pool } = testDb();
   const redis = testRedis();
   const config = loadConfig({ NODE_ENV: 'test', APP_VERSION: 'test' });
-  const getHealth = new GetHealth({
-    clock: new SystemClock(),
-    version: 'test',
-    db: new PgHealthProbe(pool),
-    redis: new RedisHealthProbe(redis),
-  });
-  return buildServer({ config, getHealth });
+  const emailSender = new CapturingEmailSender();
+  const app = buildServer(composeServerDeps({ config, db, pool, redis, emailSender }));
+  return { app, emails: emailSender.sent };
 }

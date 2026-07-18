@@ -12,6 +12,10 @@ export abstract class DomainError extends Error {
   }
 }
 
+export class UnauthorizedError extends DomainError {
+  readonly status = 401;
+}
+
 export class NotFoundError extends DomainError {
   readonly status = 404;
 }
@@ -26,4 +30,16 @@ export class ForbiddenError extends DomainError {
 
 export class ValidationError extends DomainError {
   readonly status = 422;
+}
+
+/** 429 — carries the Retry-After value the rate limiter computed (docs/04). */
+export class RateLimitedError extends DomainError {
+  readonly status = 429;
+
+  constructor(
+    message: string,
+    readonly retryAfterSeconds: number,
+  ) {
+    super(message);
+  }
 }

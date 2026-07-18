@@ -73,7 +73,7 @@ describe('data layer (integration)', () => {
   });
 
   it('reflects live stores through GET /healthz', async () => {
-    const app = buildTestServer();
+    const { app } = buildTestServer();
     await app.ready();
     try {
       const res = await app.inject({ method: 'GET', url: HEALTH_PATH });

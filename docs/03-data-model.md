@@ -183,8 +183,8 @@ Extensions required: `pg_trgm`, `citext` (both bundled; enabled in migration 000
 
 | Key pattern | Type | TTL | Purpose |
 |---|---|---|---|
-| `sess:{sessionId}` | hash | 30d | Refresh-token session: `userId`, `tokenHash`, `family`, `rotatedAt` (see [05 — Security](05-security.md)) |
-| `sessidx:{userId}` | set | — | Session ids per user → "log out everywhere", revoke on password change |
+| `sess:{sessionId}` | hash | 30d | Refresh-token session: `userId`, `tokenHash`, `prevTokenHash`, `rotatedAt`, `expiresAt` (see [05 — Security](05-security.md), [ADR-0009](adr/0009-refresh-reuse-grace-window.md)). TTL is set at login to the absolute 30-day expiry and never extended on rotation. |
+| `sessidx:{userId}` | set | 30d | Session ids per user → "log out everywhere", revoke on password change. TTL re-armed on each new session; dead ids are pruned on revoke. |
 | `everify:{tokenHash}` | string | 24h | Email-verification token → userId, single-use |
 | `pwreset:{tokenHash}` | string | 1h | Password-reset token → userId, single-use |
 | `rl:{scope}:{key}` | counter | window | Rate limiting (login, register, forgot-password, refresh) |
