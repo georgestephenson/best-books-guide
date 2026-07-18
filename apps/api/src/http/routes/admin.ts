@@ -2,13 +2,22 @@ import { Type, type FastifyPluginAsyncTypebox } from '@fastify/type-provider-typ
 import {
   AdminBook,
   AdminBookListItem,
+  AdminListDetail,
+  AdminListSummary,
+  AdminSeriesDetail,
+  AdminSeriesSummary,
   AdminSubject,
   BookRefResponse,
   BookWriteBody,
   ImportBookBody,
+  ListCreateBody,
+  ListUpdateBody,
   OpenLibraryResult,
   OpenLibrarySearchQuery,
   ReorderSubjectsBody,
+  SeriesWriteBody,
+  SetListItemsBody,
+  SetSeriesBooksBody,
   SubjectWriteBody,
 } from '@bestbooks/shared';
 import type { AuthGuards } from '../auth-guards.js';
@@ -28,6 +37,22 @@ import type {
   ReorderSubjects,
   UpdateSubject,
 } from '../../app/usecases/admin-subjects.js';
+import type {
+  CreateList,
+  DeleteList,
+  GetAdminList,
+  ListAdminLists,
+  SetListItems,
+  UpdateList,
+} from '../../app/usecases/admin-lists.js';
+import type {
+  CreateSeries,
+  DeleteSeries,
+  GetAdminSeries,
+  ListAdminSeries,
+  SetSeriesBooks,
+  UpdateSeries,
+} from '../../app/usecases/admin-series.js';
 
 export interface AdminRoutesDeps {
   guards: AuthGuards;
@@ -43,10 +68,23 @@ export interface AdminRoutesDeps {
   updateSubject: UpdateSubject;
   deleteSubject: DeleteSubject;
   reorderSubjects: ReorderSubjects;
+  listLists: ListAdminLists;
+  createList: CreateList;
+  getList: GetAdminList;
+  updateList: UpdateList;
+  deleteList: DeleteList;
+  setListItems: SetListItems;
+  listSeries: ListAdminSeries;
+  createSeries: CreateSeries;
+  getSeries: GetAdminSeries;
+  updateSeries: UpdateSeries;
+  deleteSeries: DeleteSeries;
+  setSeriesBooks: SetSeriesBooks;
 }
 
 const IdParams = Type.Object({ id: Type.String({ minLength: 1, maxLength: 40 }) });
 const BookListQuery = Type.Object({ search: Type.Optional(Type.String({ maxLength: 200 })) });
+const IdSlug = Type.Object({ id: Type.String(), slug: Type.String() });
 
 /**
  * Admin catalogue endpoints (docs/04 §Admin), mounted under /api/v1/admin. Every
@@ -139,6 +177,83 @@ export function adminRoutes(deps: AdminRoutesDeps): FastifyPluginAsyncTypebox {
 
     app.delete('/subjects/:id', { schema: { params: IdParams } }, async (request, reply) => {
       await deps.deleteSubject.execute(request.params.id);
+      return reply.status(204).send();
+    });
+
+    // --- lists ---
+    app.get('/lists', { schema: { response: { 200: Type.Array(AdminListSummary) } } }, async () =>
+      deps.listLists.execute(),
+    );
+
+    app.post(
+      '/lists',
+      { schema: { body: ListCreateBody, response: { 201: IdSlug } } },
+      async (request, reply) => reply.status(201).send(await deps.createList.execute(request.body)),
+    );
+
+    app.get(
+      '/lists/:id',
+      { schema: { params: IdParams, response: { 200: AdminListDetail } } },
+      async (request) => deps.getList.execute(request.params.id),
+    );
+
+    app.patch(
+      '/lists/:id',
+      { schema: { params: IdParams, body: ListUpdateBody, response: { 200: AdminListDetail } } },
+      async (request) => deps.updateList.execute(request.params.id, request.body),
+    );
+
+    app.put(
+      '/lists/:id/items',
+      { schema: { params: IdParams, body: SetListItemsBody, response: { 200: AdminListDetail } } },
+      async (request) => deps.setListItems.execute(request.params.id, request.body),
+    );
+
+    app.delete('/lists/:id', { schema: { params: IdParams } }, async (request, reply) => {
+      await deps.deleteList.execute(request.params.id);
+      return reply.status(204).send();
+    });
+
+    // --- series ---
+    app.get(
+      '/series',
+      { schema: { response: { 200: Type.Array(AdminSeriesSummary) } } },
+      async () => deps.listSeries.execute(),
+    );
+
+    app.post(
+      '/series',
+      { schema: { body: SeriesWriteBody, response: { 201: IdSlug } } },
+      async (request, reply) =>
+        reply.status(201).send(await deps.createSeries.execute(request.body)),
+    );
+
+    app.get(
+      '/series/:id',
+      { schema: { params: IdParams, response: { 200: AdminSeriesDetail } } },
+      async (request) => deps.getSeries.execute(request.params.id),
+    );
+
+    app.patch(
+      '/series/:id',
+      { schema: { params: IdParams, body: SeriesWriteBody, response: { 200: AdminSeriesDetail } } },
+      async (request) => deps.updateSeries.execute(request.params.id, request.body),
+    );
+
+    app.put(
+      '/series/:id/books',
+      {
+        schema: {
+          params: IdParams,
+          body: SetSeriesBooksBody,
+          response: { 200: AdminSeriesDetail },
+        },
+      },
+      async (request) => deps.setSeriesBooks.execute(request.params.id, request.body),
+    );
+
+    app.delete('/series/:id', { schema: { params: IdParams } }, async (request, reply) => {
+      await deps.deleteSeries.execute(request.params.id);
       return reply.status(204).send();
     });
   };

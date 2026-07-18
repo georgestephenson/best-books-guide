@@ -11,6 +11,7 @@ import { RedisHealthProbe } from './infra/redis/redis-health-probe.js';
 import { DrizzleUserRepository } from './infra/db/drizzle-user-repository.js';
 import { DrizzleCatalogueRepository } from './infra/db/drizzle-catalogue-repository.js';
 import { DrizzleAdminCatalogueRepository } from './infra/db/drizzle-admin-catalogue-repository.js';
+import { DrizzleAdminCurationRepository } from './infra/db/drizzle-admin-curation-repository.js';
 import { RedisCache } from './infra/redis/redis-cache.js';
 import { FsImageStore } from './infra/media/fs-image-store.js';
 import { FetchOpenLibraryClient } from './infra/openlibrary/fetch-open-library-client.js';
@@ -60,6 +61,22 @@ import {
   ReorderSubjects,
   UpdateSubject,
 } from './app/usecases/admin-subjects.js';
+import {
+  CreateList,
+  DeleteList,
+  GetAdminList,
+  ListAdminLists,
+  SetListItems,
+  UpdateList,
+} from './app/usecases/admin-lists.js';
+import {
+  CreateSeries,
+  DeleteSeries,
+  GetAdminSeries,
+  ListAdminSeries,
+  SetSeriesBooks,
+  UpdateSeries,
+} from './app/usecases/admin-series.js';
 import { createAuthGuards } from './http/auth-guards.js';
 import type { ServerDeps } from './http/server.js';
 
@@ -87,6 +104,7 @@ export function composeServerDeps(input: CompositionInput): ServerDeps {
   const users = new DrizzleUserRepository(db);
   const catalogue = new DrizzleCatalogueRepository(db);
   const adminCatalogue = new DrizzleAdminCatalogueRepository(db);
+  const adminCuration = new DrizzleAdminCurationRepository(db);
   const cache = new RedisCache(redis);
   const imageStore = input.imageStore ?? new FsImageStore(config.MEDIA_DIR);
   const openLibrary = input.openLibrary ?? new FetchOpenLibraryClient(config.OPENLIBRARY_BASE_URL);
@@ -223,6 +241,18 @@ export function composeServerDeps(input: CompositionInput): ServerDeps {
       updateSubject: new UpdateSubject(adminCatalogue),
       deleteSubject: new DeleteSubject(adminCatalogue),
       reorderSubjects: new ReorderSubjects(adminCatalogue),
+      listLists: new ListAdminLists(adminCuration),
+      createList: new CreateList(adminCuration),
+      getList: new GetAdminList(adminCuration),
+      updateList: new UpdateList(adminCuration),
+      deleteList: new DeleteList(adminCuration),
+      setListItems: new SetListItems(adminCuration),
+      listSeries: new ListAdminSeries(adminCuration),
+      createSeries: new CreateSeries(adminCuration),
+      getSeries: new GetAdminSeries(adminCuration),
+      updateSeries: new UpdateSeries(adminCuration),
+      deleteSeries: new DeleteSeries(adminCuration),
+      setSeriesBooks: new SetSeriesBooks(adminCuration),
     },
   };
 }

@@ -104,3 +104,115 @@ export const ReorderSubjectsBody = Type.Object(
   opts,
 );
 export type ReorderSubjectsBody = Static<typeof ReorderSubjectsBody>;
+
+// --- lists ---
+export const ListCreateBody = Type.Object(
+  {
+    title: Type.String({ minLength: 1, maxLength: 300 }),
+    subjectId: Type.String({ minLength: 1 }),
+    intro: Type.Optional(Nullable(Type.String({ maxLength: 5000 }))),
+  },
+  opts,
+);
+export type ListCreateBody = Static<typeof ListCreateBody>;
+
+export const ListUpdateBody = Type.Object(
+  {
+    title: Type.String({ minLength: 1, maxLength: 300 }),
+    subjectId: Type.String({ minLength: 1 }),
+    intro: Type.Optional(Nullable(Type.String({ maxLength: 5000 }))),
+    isPublished: Type.Boolean(),
+    parentListId: Type.Optional(Nullable(Type.String())),
+  },
+  opts,
+);
+export type ListUpdateBody = Static<typeof ListUpdateBody>;
+
+export const AdminListSummary = Type.Object({
+  id: Type.String(),
+  slug: Type.String(),
+  title: Type.String(),
+  subjectName: Type.String(),
+  parentTitle: Nullable(Type.String()),
+  isPublished: Type.Boolean(),
+  itemCount: Type.Integer(),
+});
+export type AdminListSummary = Static<typeof AdminListSummary>;
+
+export const AdminListItem = Type.Object({
+  type: Type.Union([Type.Literal('book'), Type.Literal('series')]),
+  refId: Type.String(),
+  title: Type.String(),
+  rank: Type.Integer(),
+  blurb: Nullable(Type.String()),
+});
+export type AdminListItem = Static<typeof AdminListItem>;
+
+export const AdminListDetail = Type.Object({
+  id: Type.String(),
+  slug: Type.String(),
+  title: Type.String(),
+  subjectId: Type.String(),
+  parentListId: Nullable(Type.String()),
+  intro: Nullable(Type.String()),
+  isPublished: Type.Boolean(),
+  items: Type.Array(AdminListItem),
+});
+export type AdminListDetail = Static<typeof AdminListDetail>;
+
+export const SetListItemsBody = Type.Object(
+  {
+    items: Type.Array(
+      Type.Object(
+        {
+          bookId: Type.Optional(Type.String()),
+          seriesId: Type.Optional(Type.String()),
+          blurb: Type.Optional(Nullable(Type.String({ maxLength: 2000 }))),
+        },
+        opts,
+      ),
+      { maxItems: 200 },
+    ),
+  },
+  opts,
+);
+export type SetListItemsBody = Static<typeof SetListItemsBody>;
+
+// --- series ---
+export const SeriesWriteBody = Type.Object(
+  {
+    title: Type.String({ minLength: 1, maxLength: 300 }),
+    description: Type.Optional(Nullable(Type.String({ maxLength: 5000 }))),
+  },
+  opts,
+);
+export type SeriesWriteBody = Static<typeof SeriesWriteBody>;
+
+export const AdminSeriesSummary = Type.Object({
+  id: Type.String(),
+  slug: Type.String(),
+  title: Type.String(),
+  bookCount: Type.Integer(),
+});
+export type AdminSeriesSummary = Static<typeof AdminSeriesSummary>;
+
+export const AdminSeriesDetail = Type.Object({
+  id: Type.String(),
+  slug: Type.String(),
+  title: Type.String(),
+  description: Nullable(Type.String()),
+  books: Type.Array(
+    Type.Object({
+      id: Type.String(),
+      title: Type.String(),
+      seriesPosition: Nullable(Type.Number()),
+    }),
+  ),
+});
+export type AdminSeriesDetail = Static<typeof AdminSeriesDetail>;
+
+export const SetSeriesBooksBody = Type.Object(
+  { bookIds: Type.Array(Type.String(), { maxItems: 200 }) },
+  opts,
+);
+export type SetSeriesBooksBody = Static<typeof SetSeriesBooksBody>;

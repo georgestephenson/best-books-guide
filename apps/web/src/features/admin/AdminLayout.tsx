@@ -46,6 +46,12 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               <NavLink end to="/admin" className={navClass}>
                 Catalogue
               </NavLink>
+              <NavLink to="/admin/lists" className={navClass}>
+                Lists
+              </NavLink>
+              <NavLink to="/admin/series" className={navClass}>
+                Series
+              </NavLink>
               <NavLink to="/admin/import" className={navClass}>
                 Import
               </NavLink>

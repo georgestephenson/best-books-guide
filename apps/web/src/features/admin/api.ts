@@ -2,10 +2,19 @@ import {
   API_BASE_PATH,
   type AdminBook,
   type AdminBookListItem,
+  type AdminListDetail,
+  type AdminListSummary,
+  type AdminSeriesDetail,
+  type AdminSeriesSummary,
   type AdminSubject,
   type BookRefResponse,
   type BookWriteBody,
+  type ListCreateBody,
+  type ListUpdateBody,
   type OpenLibraryResult,
+  type SeriesWriteBody,
+  type SetListItemsBody,
+  type SetSeriesBooksBody,
   type SubjectWriteBody,
 } from '@bestbooks/shared';
 import { apiJson } from '../../lib/api.js';
@@ -52,6 +61,39 @@ export const deleteSubject = (id: string): Promise<void> =>
 
 export const reorderSubjects = (orderedIds: string[]): Promise<AdminSubject[]> =>
   apiJson(`${ADMIN}/subjects/reorder`, send('PUT', { orderedIds }));
+
+// --- lists ---
+export const listAdminLists = (): Promise<AdminListSummary[]> => apiJson(`${ADMIN}/lists`);
+export const createList = (body: ListCreateBody): Promise<{ id: string; slug: string }> =>
+  apiJson(`${ADMIN}/lists`, send('POST', body));
+export const getAdminList = (id: string): Promise<AdminListDetail> =>
+  apiJson(`${ADMIN}/lists/${id}`);
+export const updateList = (id: string, body: ListUpdateBody): Promise<AdminListDetail> =>
+  apiJson(`${ADMIN}/lists/${id}`, send('PATCH', body));
+export const deleteList = (id: string): Promise<void> =>
+  apiJson(`${ADMIN}/lists/${id}`, send('DELETE'));
+export const setListItems = (id: string, body: SetListItemsBody): Promise<AdminListDetail> =>
+  apiJson(`${ADMIN}/lists/${id}/items`, send('PUT', body));
+
+// --- series ---
+export const listAdminSeries = (): Promise<AdminSeriesSummary[]> => apiJson(`${ADMIN}/series`);
+export const createSeries = (body: SeriesWriteBody): Promise<{ id: string; slug: string }> =>
+  apiJson(`${ADMIN}/series`, send('POST', body));
+export const getAdminSeries = (id: string): Promise<AdminSeriesDetail> =>
+  apiJson(`${ADMIN}/series/${id}`);
+export const updateSeries = (id: string, body: SeriesWriteBody): Promise<AdminSeriesDetail> =>
+  apiJson(`${ADMIN}/series/${id}`, send('PATCH', body));
+export const deleteSeries = (id: string): Promise<void> =>
+  apiJson(`${ADMIN}/series/${id}`, send('DELETE'));
+export const setSeriesBooks = (id: string, body: SetSeriesBooksBody): Promise<AdminSeriesDetail> =>
+  apiJson(`${ADMIN}/series/${id}/books`, send('PUT', body));
+
+export const curationKeys = {
+  lists: ['admin', 'lists'] as const,
+  list: (id: string) => ['admin', 'list', id] as const,
+  series: ['admin', 'series-list'] as const,
+  seriesItem: (id: string) => ['admin', 'series', id] as const,
+};
 
 export const adminKeys = {
   books: (search?: string) => ['admin', 'books', search ?? ''] as const,

@@ -6,14 +6,20 @@ Canonical task list — see [CLAUDE.md](CLAUDE.md) for how this file is used. Ro
 
 ## Now (M3 — catalogue & curation)
 
-L-sized, multi-PR. Sequence: **public-browsing first** (reach the exit criterion fastest), then admin tooling. Plan: public-domain seed content only — real editorial picks never go in source control. Full slicing in [docs/08 §M3](docs/08-delivery-plan.md).
+**All 6 slices BUILT and CI-green** (public-browsing first, then admin tooling; public-domain seed only). Slices 1–4 merged to `main` (PR #24); slices 5–6 on branches awaiting review/merge. Full slicing in [docs/08 §M3](docs/08-delivery-plan.md).
 
-- [ ] **Slice 1 — Catalogue foundation** (`feat/m3-catalogue-foundation`): Drizzle schema (subjects/authors/books/book_authors/book_subjects/series/lists/list_items) + hand-augmented migration 0001 (partial uniques, deferred rank, `num_nonnulls` check, GIN trgm, indexes); `CatalogueRepository` read port + adapter + PG integration tests; `promote-admin` CLI + runbook. No UI.
-- [ ] **Slice 2 — Public read API**: shared contracts; use-cases + `/api/v1` catalogue routes (subjects/list/books/book/series); `sitemap.xml`/`robots.txt` + nginx proxy locations.
-- [ ] **Slice 3 — Public SPA**: home/subject/list/book/series pages; React 19 metadata + JSON-LD; Lighthouse ≥90.
-- [ ] **Slice 4 — Seed 3 real lists** (public-domain) → **M3 exit criteria met** (visitor browses real lists on prod).
-- [ ] **Slice 5 — Admin catalogue CRUD + OL import** (port + recorded fixtures; covers → media dir).
-- [ ] **Slice 6 — Admin list/series builder** (drag-rank, blurbs, sublists, publish toggle).
+- [x] **Slice 1 — Catalogue foundation**: Drizzle schema + hand-augmented migration 0001 (deferred rank, `num_nonnulls`, GIN trgm — ADR-0010); `promote-admin` CLI + runbook. *(merged)*
+- [x] **Slice 2 — Public read API**: shared contracts; `/api/v1` catalogue routes; `sitemap.xml`/`robots.txt` + nginx proxy. *(merged)*
+- [x] **Slice 3 — Public SPA**: home/subject/list/book/series; React 19 metadata + JSON-LD; "reading room" design. *(merged)*
+- [x] **Slice 4 — Public-domain seed** (`seed:catalogue`) — 3 subjects, series + sublists. **Exit criteria met locally.** *(merged)*
+- [x] **Slice 5 — Admin catalogue CRUD + Open Library import** (fixtures + verified live vs real OL) — `feat/m3-admin-catalogue`.
+- [x] **Slice 6 — Admin list & series builder** (items/blurbs/reorder/publish/sublist-nest; series membership) — `feat/m3-list-series-builder`.
+
+**To finish shipping M3:**
+- [ ] Review/merge PRs for slices 5 (`feat/m3-admin-catalogue`) and 6 (`feat/m3-list-series-builder`)
+- [ ] Deploy `main`, run `seed:catalogue` on the host, `promote-admin` your account — then browse real lists on `https://bestbooks.guide`
+- [ ] Confirm the exit criteria **on prod** + run Lighthouse (≥90 perf/a11y) on a list + book page
+- [ ] Note: list/series reorder ships as up/down controls (docs/01 F6 says "drag" — deferred; up/down meets the ranking need)
 
 ## Carry-over / follow-ups (from M1–M2)
 
