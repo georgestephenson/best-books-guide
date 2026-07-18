@@ -75,6 +75,7 @@ export default defineConfig({
         'apps/api/src/composition.ts', // hand-wired DI root — construction only, no logic to unit-test
         'apps/api/src/migrate.ts', // one-shot migration CLI — exercised by the deploy step and globalSetup
         'apps/web/src/main.tsx',
+        'apps/web/src/routes.tsx', // route table / router bootstrap
         'apps/web/src/lib/queryClient.ts', // DI bootstrap wiring
       ],
       thresholds: {
