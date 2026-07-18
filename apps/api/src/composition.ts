@@ -7,6 +7,7 @@ import { SystemClock } from './infra/clock.js';
 import { PgHealthProbe } from './infra/db/pg-health-probe.js';
 import { RedisHealthProbe } from './infra/redis/redis-health-probe.js';
 import { DrizzleUserRepository } from './infra/db/drizzle-user-repository.js';
+import { DrizzleCatalogueRepository } from './infra/db/drizzle-catalogue-repository.js';
 import { RedisSessionStore } from './infra/redis/redis-session-store.js';
 import { RedisOneTimeTokenStore } from './infra/redis/redis-one-time-token-store.js';
 import { RedisRateLimiter } from './infra/redis/redis-rate-limiter.js';
@@ -30,6 +31,13 @@ import { ResetPassword } from './app/usecases/reset-password.js';
 import { GetMe } from './app/usecases/get-me.js';
 import { UpdateMe } from './app/usecases/update-me.js';
 import { ChangePassword } from './app/usecases/change-password.js';
+import { GetSubjects } from './app/usecases/get-subjects.js';
+import { GetSubject } from './app/usecases/get-subject.js';
+import { GetList } from './app/usecases/get-list.js';
+import { GetBooks } from './app/usecases/get-books.js';
+import { GetBook } from './app/usecases/get-book.js';
+import { GetSeries } from './app/usecases/get-series.js';
+import { GetSitemap } from './app/usecases/get-sitemap.js';
 import { createAuthGuards } from './http/auth-guards.js';
 import type { ServerDeps } from './http/server.js';
 
@@ -52,6 +60,7 @@ export function composeServerDeps(input: CompositionInput): ServerDeps {
 
   const clock = new SystemClock();
   const users = new DrizzleUserRepository(db);
+  const catalogue = new DrizzleCatalogueRepository(db);
   const sessions = new RedisSessionStore(redis);
   const oneTimeTokens = new RedisOneTimeTokenStore(redis);
   const rateLimiter = new RedisRateLimiter(redis);
@@ -153,6 +162,18 @@ export function composeServerDeps(input: CompositionInput): ServerDeps {
       }),
       guards,
       secureCookie,
+    },
+    catalogue: {
+      getSubjects: new GetSubjects(catalogue),
+      getSubject: new GetSubject(catalogue),
+      getList: new GetList(catalogue),
+      getBooks: new GetBooks(catalogue),
+      getBook: new GetBook(catalogue),
+      getSeries: new GetSeries(catalogue),
+    },
+    sitemap: {
+      getSitemap: new GetSitemap(catalogue),
+      publicBaseUrl,
     },
   };
 }
