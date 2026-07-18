@@ -117,6 +117,21 @@ describe('admin curation — lists & series (integration)', () => {
     expect(dup.statusCode).toBe(422);
   });
 
+  it('treats an empty-string parentListId as top-level (regression: 500 on "")', async () => {
+    const { subject } = await seedSubjectAndBooks();
+    const list = (await post('/admin/lists', { title: 'Top', subjectId: subject.id })).json() as {
+      id: string;
+    };
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `${API}/admin/lists/${list.id}`,
+      headers: auth,
+      payload: { title: 'Top', subjectId: subject.id, isPublished: true, parentListId: '' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect((res.json() as { parentListId: string | null }).parentListId).toBeNull();
+  });
+
   it('enforces the one-level, same-subject sublist rules', async () => {
     const { subject } = await seedSubjectAndBooks();
     const other = (await post('/admin/subjects', { name: 'Science' })).json() as { id: string };

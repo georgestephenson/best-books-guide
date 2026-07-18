@@ -43,7 +43,9 @@ export class UpdateList {
   constructor(private readonly repo: AdminCurationRepository) {}
 
   async execute(id: string, body: ListUpdateBody): Promise<AdminListDetail> {
-    const parentListId = body.parentListId ?? null;
+    // Coerce empty string (the "no parent" <option value="">) to null — otherwise it
+    // would be treated as a real id and reach the DB as an invalid uuid.
+    const parentListId = body.parentListId || null;
 
     // Enforce the sublist invariants (docs/03) before writing.
     if (parentListId !== null) {
