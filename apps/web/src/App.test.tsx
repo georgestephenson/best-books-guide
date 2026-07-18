@@ -1,42 +1,53 @@
 import { describe, expect, it } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { screen } from '@testing-library/react';
-import { API_BASE_PATH, HEALTH_PATH } from '@bestbooks/shared';
+import { API_BASE_PATH, type SubjectDetail } from '@bestbooks/shared';
 import { App } from './App.js';
 import { renderApp } from './test/render.js';
 import { server } from './test/server.js';
 
-describe('App (home)', () => {
-  it('shows sign-in links and health when the session is anonymous', async () => {
-    // Default handlers: healthy API, refresh 401 → anonymous.
+const subjects: SubjectDetail[] = [
+  {
+    slug: 'fiction',
+    name: 'Fiction',
+    description: 'The novels that repay rereading.',
+    lists: [
+      {
+        slug: 'best-fiction',
+        title: 'The Essential Novels',
+        intro: 'A short shelf.',
+        itemCount: 12,
+      },
+    ],
+  },
+];
+
+describe('App (catalogue home)', () => {
+  it('renders subjects and their lists with a sign-in link', async () => {
+    server.use(http.get(`${API_BASE_PATH}/subjects`, () => HttpResponse.json(subjects)));
     renderApp(<App />);
-    expect(await screen.findByRole('link', { name: /sign in/i })).toBeInTheDocument();
-    expect(await screen.findByText(/api ok · test/i)).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: /what should you read next/i }),
+    ).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'Fiction' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /the essential novels/i })).toHaveAttribute(
+      'href',
+      '/lists/best-fiction',
+    );
+    expect(screen.getByRole('link', { name: /sign in/i })).toBeInTheDocument();
   });
 
-  it('greets a restored session', async () => {
+  it('shows an empty state before any list is published', async () => {
+    server.use(http.get(`${API_BASE_PATH}/subjects`, () => HttpResponse.json([])));
+    renderApp(<App />);
+    expect(await screen.findByText(/first curated lists are being written/i)).toBeInTheDocument();
+  });
+
+  it('shows an error when the catalogue fails to load', async () => {
     server.use(
-      http.post(`${API_BASE_PATH}/auth/refresh`, () =>
-        HttpResponse.json({
-          accessToken: 'tok',
-          expiresIn: 900,
-          user: {
-            id: 'u1',
-            email: 'reader@example.com',
-            displayName: 'Reader',
-            role: 'member',
-            emailVerifiedAt: '2026-07-18T00:00:00.000Z',
-          },
-        }),
-      ),
+      http.get(`${API_BASE_PATH}/subjects`, () => new HttpResponse(null, { status: 500 })),
     );
     renderApp(<App />);
-    expect(await screen.findByText(/signed in as/i)).toHaveTextContent('Reader');
-  });
-
-  it('shows an error when the API health check fails', async () => {
-    server.use(http.get(HEALTH_PATH, () => new HttpResponse(null, { status: 500 })));
-    renderApp(<App />);
-    expect(await screen.findByText(/api unreachable/i)).toBeInTheDocument();
+    expect(await screen.findByText(/something went wrong/i)).toBeInTheDocument();
   });
 });

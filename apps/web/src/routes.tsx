@@ -1,5 +1,9 @@
 import { createBrowserRouter } from 'react-router';
 import { App } from './App.js';
+import { SubjectPage } from './features/catalogue/SubjectPage.js';
+import { ListPage } from './features/catalogue/ListPage.js';
+import { BookPage } from './features/catalogue/BookPage.js';
+import { SeriesPage } from './features/catalogue/SeriesPage.js';
 import { LoginPage } from './features/auth/LoginPage.js';
 import { RegisterPage } from './features/auth/RegisterPage.js';
 import { VerifyEmailPage } from './features/auth/VerifyEmailPage.js';
@@ -13,6 +17,10 @@ import { ResetPasswordPage } from './features/auth/ResetPasswordPage.js';
  */
 export const routes = [
   { path: '/', element: <App /> },
+  { path: '/subjects/:slug', element: <SubjectPage /> },
+  { path: '/lists/:slug', element: <ListPage /> },
+  { path: '/books/:slug', element: <BookPage /> },
+  { path: '/series/:slug', element: <SeriesPage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
   { path: '/verify-email', element: <VerifyEmailPage /> },
