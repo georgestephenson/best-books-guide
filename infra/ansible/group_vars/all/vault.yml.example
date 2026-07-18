@@ -6,9 +6,9 @@
 #   terraform -chdir=infra/terraform/envs/prod output -raw ses_smtp_password
 #
 # vault.yml stays LOCAL (gitignored) — this is a public repo, so we don't publish
-# even encrypted secrets. Recreate it from this example on a fresh clone. Both
-# playbooks need it: site.yml renders the app's .env, and deploy.yml runs
-# migrations against the database.
+# even encrypted secrets. Recreate it from this example on a fresh clone. Only
+# site.yml needs it (it renders the app's .env from these values); the CI-run
+# deploy.yml reads DATABASE_URL back from that rendered .env, so it needs no vault.
 
 vault_admin_email: "you@example.com" # certbot + Monit alert recipient (personal PII → keep out of the repo)
 vault_monit_smtp_username: "AKIA_EXAMPLE"
