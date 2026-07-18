@@ -124,3 +124,9 @@ Plus an **external** uptime ping (UptimeRobot free tier or similar) because Moni
      node /srv/bestbooks/current/apps/api/dist/promote-admin.js <email>'
    ```
    Idempotent; exits non-zero if no user has that email. Locally it's `npm -w apps/api run promote-admin -- <email>`.
+7. **Seed the catalogue** (public-domain content, docs/03 §seeds): same env-sourcing as above, running the compiled seed CLI:
+   ```
+   sudo -u bestbooks bash -c 'set -a; . /srv/bestbooks/shared/.env; \
+     node /srv/bestbooks/current/apps/api/dist/seed-catalogue.js'
+   ```
+   Idempotent (upserts by slug). Locally it's `npm -w apps/api run seed:catalogue`. Editorial content proper is added via the admin UI, not here.

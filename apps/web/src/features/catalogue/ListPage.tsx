@@ -111,7 +111,9 @@ export function ListPage() {
             </h1>
             {data.intro ? <p className="dropcap mt-6 text-ink">{data.intro}</p> : null}
             <p className="mt-6 border-t border-line pt-4 font-sans text-sm text-muted">
-              {data.items.length} {data.items.length === 1 ? 'entry' : 'entries'} · ranked
+              {data.items.length > 0
+                ? `${data.items.length} ${data.items.length === 1 ? 'entry' : 'entries'} · ranked`
+                : `${data.sublists.length} reading ${data.sublists.length === 1 ? 'path' : 'paths'}`}
             </p>
           </header>
 
@@ -121,9 +123,9 @@ export function ListPage() {
                 <Item key={item.rank} item={item} />
               ))}
             </ol>
-          ) : (
+          ) : data.sublists.length === 0 ? (
             <p className="mt-8 text-muted">This list is still being assembled.</p>
-          )}
+          ) : null}
 
           {data.sublists.length > 0 ? (
             <div className="mt-12 max-w-3xl border-t border-line pt-6">
