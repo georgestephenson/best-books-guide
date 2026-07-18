@@ -9,6 +9,7 @@
     "build": "tsc -b",
     "start": "node dist/main.js",
     "migrate": "node dist/migrate.js",
+    "promote-admin": "node dist/promote-admin.js",
     "db:generate": "drizzle-kit generate",
     "clean": "rm -rf dist tsconfig.tsbuildinfo"
   },

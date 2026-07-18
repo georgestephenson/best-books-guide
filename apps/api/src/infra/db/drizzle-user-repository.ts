@@ -59,4 +59,14 @@ export class DrizzleUserRepository implements UserRepository {
       .returning();
     return toRecord(row!);
   }
+
+  async promoteToAdmin(email: string): Promise<UserRecord | null> {
+    // email is citext, so this match folds case in the database.
+    const [row] = await this.db
+      .update(users)
+      .set({ role: 'admin' })
+      .where(eq(users.email, email))
+      .returning();
+    return row ? toRecord(row) : null;
+  }
 }

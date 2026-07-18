@@ -77,6 +77,16 @@ export class FakeUserRepository implements UserRepository {
     this.byId.set(id, u);
     return Promise.resolve(u);
   }
+  promoteToAdmin(email: string): Promise<UserRecord | null> {
+    for (const u of this.byId.values()) {
+      if (u.email.toLowerCase() === email.toLowerCase()) {
+        const promoted = { ...u, role: 'admin' as const };
+        this.byId.set(u.id, promoted);
+        return Promise.resolve(promoted);
+      }
+    }
+    return Promise.resolve(null);
+  }
 }
 
 export class FakeSessionStore implements SessionStore {
