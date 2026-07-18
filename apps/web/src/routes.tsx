@@ -4,6 +4,10 @@ import { SubjectPage } from './features/catalogue/SubjectPage.js';
 import { ListPage } from './features/catalogue/ListPage.js';
 import { BookPage } from './features/catalogue/BookPage.js';
 import { SeriesPage } from './features/catalogue/SeriesPage.js';
+import { CataloguePage } from './features/admin/CataloguePage.js';
+import { ImportPage } from './features/admin/ImportPage.js';
+import { BookFormPage } from './features/admin/BookFormPage.js';
+import { SubjectsPage } from './features/admin/SubjectsPage.js';
 import { LoginPage } from './features/auth/LoginPage.js';
 import { RegisterPage } from './features/auth/RegisterPage.js';
 import { VerifyEmailPage } from './features/auth/VerifyEmailPage.js';
@@ -21,6 +25,11 @@ export const routes = [
   { path: '/lists/:slug', element: <ListPage /> },
   { path: '/books/:slug', element: <BookPage /> },
   { path: '/series/:slug', element: <SeriesPage /> },
+  { path: '/admin', element: <CataloguePage /> },
+  { path: '/admin/import', element: <ImportPage /> },
+  { path: '/admin/books/new', element: <BookFormPage /> },
+  { path: '/admin/books/:id', element: <BookFormPage /> },
+  { path: '/admin/subjects', element: <SubjectsPage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
   { path: '/verify-email', element: <VerifyEmailPage /> },

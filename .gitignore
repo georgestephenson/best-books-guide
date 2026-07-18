@@ -32,3 +32,7 @@ infra/ansible/**/vault_pass.txt
 # Encrypted vault stays local — public repo, so we never publish secret ciphertext.
 # deploy.yml (the CI-run playbook) doesn't need it; recreate from vault.yml.example.
 infra/ansible/group_vars/all/vault.yml
+
+# Local cover-image media dir (dev; prod uses {app_dir}/media)
+/apps/api/media
+/media
