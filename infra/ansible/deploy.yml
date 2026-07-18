@@ -38,14 +38,60 @@
         group: "{{ app_group }}"
         creates: "{{ app_dir }}/releases/{{ release_sha }}/apps/api/dist/main.js"
 
+    # Its own file, not the Ansible-rendered .env — otherwise the next site.yml
+    # run re-templates .env and wipes the stamp back to 'unknown'.
     - name: Stamp APP_VERSION with the release SHA
-      ansible.builtin.lineinfile:
-        path: "{{ app_dir }}/shared/.env"
-        regexp: '^APP_VERSION='
-        line: "APP_VERSION={{ release_sha }}"
+      ansible.builtin.copy:
+        dest: "{{ app_dir }}/shared/.env.release"
+        content: "APP_VERSION={{ release_sha }}\n"
         owner: "{{ app_user }}"
         group: "{{ app_group }}"
         mode: "0640"
+
+    # Migrations run against the OLD app still serving on the OLD schema, so they
+    # must be expand-only/backward-compatible (docs/03, docs/07). The pre-migration
+    # dump is the rollback safety net — a symlink rollback does not revert schema.
+    - name: Ensure the pre-migration backup directory exists
+      ansible.builtin.file:
+        path: "{{ app_dir }}/backups"
+        state: directory
+        owner: root
+        group: root
+        mode: "0750"
+
+    - name: Back up the database before migrating
+      ansible.builtin.shell:
+        cmd: >-
+          runuser -u postgres -- pg_dump --format=custom {{ app_name }}
+          > {{ app_dir }}/backups/pre-{{ release_sha }}.dump
+        creates: "{{ app_dir }}/backups/pre-{{ release_sha }}.dump"
+
+    # DATABASE_URL comes from the .env that site.yml already rendered on the host
+    # (from the Vault), NOT from a group_var — this playbook runs in CI, which has
+    # no access to the gitignored vault.yml. So the deploy needs no secrets of its
+    # own; site.yml (run locally, with the Vault) is the one that writes them.
+    - name: Read DATABASE_URL from the deployed env file
+      ansible.builtin.slurp:
+        src: "{{ app_dir }}/shared/.env"
+      register: app_env_file
+
+    - name: Extract DATABASE_URL
+      ansible.builtin.set_fact:
+        app_database_url: >-
+          {{ (app_env_file.content | b64decode)
+             | regex_search('^DATABASE_URL=(.+)$', '\1', multiline=True) }}
+
+    # dist/migrate.js takes a PG advisory lock, so overlapping deploys can't race.
+    # Only DATABASE_URL is needed; every other config key has a schema default.
+    - name: Apply database migrations
+      ansible.builtin.command:
+        cmd: /usr/bin/node {{ app_dir }}/releases/{{ release_sha }}/apps/api/dist/migrate.js
+      become: true
+      become_user: "{{ app_user }}"
+      environment:
+        NODE_ENV: production
+        DATABASE_URL: "{{ app_database_url }}"
+      changed_when: true
 
     - name: Point 'current' at the new release
       ansible.builtin.file:

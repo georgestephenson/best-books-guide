@@ -1,0 +1,15 @@
+{{ ansible_managed | comment }}
+[Unit]
+Description={{ item.description }}
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/bestbooks-backup-{{ item.name }}
+
+# Root oneshots that run for seconds — but a backup job reads the whole database,
+# so it's worth fencing in. PrivateTmp gives each run its own scratch space.
+PrivateTmp=true
+ProtectHome=true
+NoNewPrivileges=true

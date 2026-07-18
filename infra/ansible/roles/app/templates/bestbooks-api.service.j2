@@ -9,7 +9,10 @@ Type=simple
 User={{ app_user }}
 Group={{ app_group }}
 WorkingDirectory={{ app_dir }}/current
+# Two files, two owners: .env is Ansible's (config), .env.release is the deploy
+# playbook's (APP_VERSION). Later files win, and `-` tolerates a missing one.
 EnvironmentFile={{ app_dir }}/shared/.env
+EnvironmentFile=-{{ app_dir }}/shared/.env.release
 ExecStart=/usr/bin/node {{ app_dir }}/current/apps/api/dist/main.js
 Restart=on-failure
 RestartSec=3

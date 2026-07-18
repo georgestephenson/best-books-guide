@@ -1,24 +1,31 @@
 import type { HealthResponse } from '@bestbooks/shared';
 import type { Clock } from '../ports/clock.js';
+import type { HealthProbe } from '../ports/health-probe.js';
 
 export interface GetHealthDeps {
   clock: Clock;
   version: string;
+  db: HealthProbe;
+  redis: HealthProbe;
 }
 
 /**
- * The one use-case in the M1 walking skeleton. Trivial today, but it proves the
- * shape: HTTP → use-case → ports, returning a type shared with the web client.
- * In M2 it gains DB/Redis liveness pings via new ports.
+ * Liveness + store readiness for `GET /healthz`. Both probes are pinged in
+ * parallel; the endpoint stays HTTP 200 even when a store is down (status flips to
+ * 'degraded') so a Redis blip doesn't trip the Monit deploy gate into a restart
+ * loop — the body, not the status code, carries the degradation (docs/04, docs/07).
  */
 export class GetHealth {
   constructor(private readonly deps: GetHealthDeps) {}
 
-  execute(): HealthResponse {
+  async execute(): Promise<HealthResponse> {
+    const [db, redis] = await Promise.all([this.deps.db.ping(), this.deps.redis.ping()]);
     return {
-      status: 'ok',
+      status: db && redis ? 'ok' : 'degraded',
       version: this.deps.version,
       uptimeSeconds: this.deps.clock.uptimeSeconds(),
+      db,
+      redis,
     };
   }
 }

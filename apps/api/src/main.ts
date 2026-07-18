@@ -1,19 +1,27 @@
 import { loadConfig } from './config.js';
-import { SystemClock } from './infra/clock.js';
-import { GetHealth } from './app/usecases/get-health.js';
+import { createDb } from './infra/db/pool.js';
+import { createRedis } from './infra/redis/client.js';
+import { composeServerDeps } from './composition.js';
 import { buildServer } from './http/server.js';
 
 /**
- * Composition root: build the adapters, inject them into the use-cases, wire the
- * HTTP layer, and start listening. This is the only place that knows every layer.
+ * Process bootstrap: open the stores, compose the dependency graph, and start
+ * listening. The wiring itself lives in composition.ts (shared with the tests).
  */
 async function main(): Promise<void> {
   const config = loadConfig();
 
-  const clock = new SystemClock();
-  const getHealth = new GetHealth({ clock, version: config.APP_VERSION });
+  const { db, pool } = createDb(config.DATABASE_URL);
+  const redis = createRedis(config.REDIS_URL);
 
-  const app = buildServer({ config, getHealth });
+  const app = buildServer(composeServerDeps({ config, db, pool, redis }));
+
+  // Fastify awaits onClose before app.close() resolves, so the stores drain before
+  // the process exits (the old code exited immediately after close()).
+  app.addHook('onClose', async () => {
+    await pool.end();
+    await redis.quit().catch(() => redis.disconnect());
+  });
 
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info({ signal }, 'shutting down');

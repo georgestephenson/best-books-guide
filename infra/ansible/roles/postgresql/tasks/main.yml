@@ -1,0 +1,82 @@
+---
+- name: Ensure the apt keyrings directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Download the PGDG signing key
+  ansible.builtin.get_url:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    dest: /etc/apt/keyrings/pgdg.asc
+    mode: "0644"
+
+- name: Add the PGDG repository
+  ansible.builtin.deb822_repository:
+    name: pgdg
+    types: [deb]
+    uris: https://apt.postgresql.org/pub/repos/apt
+    suites: "{{ ansible_distribution_release }}-pgdg"
+    components: [main]
+    signed_by: /etc/apt/keyrings/pgdg.asc
+    state: present
+
+- name: Install PostgreSQL {{ postgresql_version }}
+  ansible.builtin.apt:
+    name:
+      - "postgresql-{{ postgresql_version }}"
+      - "postgresql-client-{{ postgresql_version }}"
+      - python3-psycopg2 # the community.postgresql modules below run through it
+    state: present
+    update_cache: true
+
+- name: Apply the host-tuned configuration
+  ansible.builtin.template:
+    src: 10-bestbooks.conf.j2
+    dest: "/etc/postgresql/{{ postgresql_version }}/main/conf.d/10-bestbooks.conf"
+    owner: postgres
+    group: postgres
+    mode: "0644"
+  notify: Restart postgresql
+
+- name: Start and enable PostgreSQL
+  ansible.builtin.systemd_service:
+    name: postgresql
+    state: started
+    enabled: true
+
+# Config has to be live before the database/role tasks connect.
+- name: Apply pending PostgreSQL restarts
+  ansible.builtin.meta: flush_handlers
+
+- name: Create the application role
+  community.postgresql.postgresql_user:
+    name: "{{ postgresql_db_user }}"
+    password: "{{ vault_db_password }}"
+    state: present
+  become: true
+  become_user: postgres
+  no_log: true # keeps the password out of -vvv output and CI logs
+
+- name: Create the application database
+  community.postgresql.postgresql_db:
+    name: "{{ postgresql_db_name }}"
+    owner: "{{ postgresql_db_user }}"
+    encoding: UTF-8
+    state: present
+  become: true
+  become_user: postgres
+
+# citext and pg_trgm are trusted extensions (PG 13+), so migration 0001 can also
+# create them — which is what CI and compose rely on. Creating them here too keeps
+# a freshly converged host consistent whether or not a migration has run yet.
+- name: Enable the required extensions
+  community.postgresql.postgresql_ext:
+    name: "{{ item }}"
+    db: "{{ postgresql_db_name }}"
+    state: present
+  become: true
+  become_user: postgres
+  loop:
+    - citext
+    - pg_trgm

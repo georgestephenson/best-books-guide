@@ -8,3 +8,5 @@ ideas
 infra
 # Design docs are hand-formatted (tables, alignment) — don't let Prettier reflow them
 **/*.md
+# drizzle-kit owns these generated snapshots; reformatting causes churn on regenerate
+apps/api/drizzle/meta

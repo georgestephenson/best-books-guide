@@ -14,17 +14,28 @@ keep_releases: 5
 
 node_major: "24"
 
+# Transactional sender (verification + password-reset mail). The SES *identity* is
+# the apex domain; mail.{{ domain_name }} is the MAIL FROM/SPF domain, not this.
+app_email_from: "Best Books Guide <no-reply@{{ domain_name }}>"
+
 ci_deploy_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFTovBgeeioIPlr0jYdsH8AQ7pMFAjadiqJeunbcJ3uV github-actions-deploy"
 
 aws_region: eu-west-2
 releases_bucket: bestbooks-prod-releases
 media_bucket: bestbooks-prod-media
+backups_bucket: bestbooks-prod-backups
 
 ses_smtp_endpoint: "email-smtp.{{ aws_region }}.amazonaws.com"
 # 465 = SMTPS/implicit TLS, which is Monit's documented `using SSL` path.
 # (587 needs STARTTLS, which Monit's mailserver grammar doesn't negotiate —
 # it fails with "530 Must issue a STARTTLS command first".)
 ses_smtp_port: 465
+
+# Built once here so env.j2 (site.yml) and the migrate step (deploy.yml) agree on
+# one connection string. urlencode is a path encoder that leaves '/' — and a '/'
+# in userinfo truncates the authority — so it's escaped by hand (base64 passwords
+# hit this ~half the time).
+database_url: "postgresql://{{ app_user }}:{{ vault_db_password | urlencode | replace('/', '%2F') }}@127.0.0.1:5432/{{ app_name }}"
 
 # Secrets, pulled from the Ansible Vault
 monit_smtp_username: "{{ vault_monit_smtp_username }}"

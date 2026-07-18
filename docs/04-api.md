@@ -48,6 +48,8 @@ Auth column: `—` public · `M` member (valid access token) · `MV` member with
 | PATCH `/me` | M | Display name; email change is post-MVP |
 | PUT `/me/password` | M | Requires current password; revokes other sessions |
 
+Semantics settled in M2 (docs/05, [ADR-0009](adr/0009-refresh-reuse-grace-window.md)): **register** never auto-logs-in and is always 201-shaped (a duplicate emails the owner); **verify-email** returns `{verified:true}` and does not log in (the link often opens elsewhere); **login/refresh** return `{accessToken, expiresIn, user}` and set the refresh cookie, where `expiresIn` (900s) drives the SPA's silent-refresh timer; **refresh** returns **401** for a missing/expired session and **409** only for detected reuse; **logout** is **204** and idempotent; **reset-password** revokes all sessions, sets `email_verified_at` if unset (mailbox control just proven), and does not log in; **change-password** revokes every session and issues a fresh one, so the current device stays signed in while others are logged out.
+
 ### Public catalogue
 | Method & path | Auth | Purpose |
 |---|---|---|

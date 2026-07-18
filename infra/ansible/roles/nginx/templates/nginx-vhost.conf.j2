@@ -41,19 +41,25 @@ server {
     root {{ app_dir }}/current/apps/web/dist;
     index index.html;
 
-    # Security headers (docs/05). Nginx sets them for static assets; the API
-    # sets its own via helmet.
+    # Security headers for the SPA document (docs/05). Nginx owns the document's
+    # headers; the API sets its own via helmet. NOTE: add_header does NOT inherit
+    # into a location that declares its own — so any location below that needs
+    # add_header must not shadow these (see /covers/).
     add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header X-Frame-Options "DENY" always;
+    add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'" always;
+    add_header Permissions-Policy "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()" always;
 
     location /api/ {
         proxy_pass http://127.0.0.1:{{ app_port }};
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        # Overwrite, don't append: the app trusts only the loopback hop (trustProxy),
+        # so a single authoritative client IP avoids any client-supplied XFF prefix.
+        proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
@@ -63,11 +69,12 @@ server {
         access_log off;
     }
 
-    # Book covers from local disk (docs/02).
+    # Book covers from local disk (docs/02). `expires 30d` sets Cache-Control on
+    # its own; we deliberately don't add_header here, so this block keeps inheriting
+    # the security headers above (an explicit add_header would drop all of them).
     location /covers/ {
         alias {{ app_dir }}/media/;
         expires 30d;
-        add_header Cache-Control "public, immutable";
     }
 
     # SPA fallback.

@@ -1,0 +1,13 @@
+---
+# Nightly, off-peak, UTC. RandomizedDelaySec smooths the three timers apart.
+backup_db_on_calendar: "*-*-* 03:15:00"
+backup_redis_on_calendar: "*-*-* 03:30:00"
+backup_media_on_calendar: "*-*-* 03:45:00"
+
+# Sunday dumps also land under weekly/, which the bucket lifecycle keeps for 90d
+# rather than 30d (infra/terraform/modules/storage).
+backup_weekly_dow: "7"
+
+# Optional dead-man's switch (e.g. a healthchecks.io ping URL). Empty = no ping.
+# A backup that silently stops running is the failure mode worth catching.
+backup_heartbeat_url: ""

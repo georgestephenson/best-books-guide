@@ -1,0 +1,13 @@
+---
+# The three nightly jobs. Each maps to a script template of the same name plus a
+# generated .service/.timer pair.
+backup_jobs:
+  - name: db
+    description: Nightly PostgreSQL dump to S3
+    on_calendar: "{{ backup_db_on_calendar }}"
+  - name: redis
+    description: Nightly Redis snapshot to S3
+    on_calendar: "{{ backup_redis_on_calendar }}"
+  - name: media
+    description: Nightly cover-image sync to S3
+    on_calendar: "{{ backup_media_on_calendar }}"

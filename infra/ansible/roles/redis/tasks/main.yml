@@ -1,0 +1,65 @@
+---
+- name: Ensure the apt keyrings directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+# Ubuntu 24.04 ships Redis 7.0; docs/03 pins Redis 8, so it comes from upstream.
+- name: Download the Redis signing key
+  ansible.builtin.get_url:
+    url: https://packages.redis.io/gpg
+    dest: /etc/apt/keyrings/redis.asc
+    mode: "0644"
+
+- name: Add the Redis repository
+  ansible.builtin.deb822_repository:
+    name: redis
+    types: [deb]
+    uris: https://packages.redis.io/deb
+    suites: "{{ ansible_distribution_release }}"
+    components: [main]
+    signed_by: /etc/apt/keyrings/redis.asc
+    state: present
+
+- name: Install Redis
+  ansible.builtin.apt:
+    name: redis
+    state: present
+    update_cache: true
+
+- name: Create the Redis drop-in directory
+  ansible.builtin.file:
+    path: /etc/redis/conf.d
+    state: directory
+    owner: redis
+    group: redis
+    mode: "0750"
+
+- name: Apply the host-tuned configuration
+  ansible.builtin.template:
+    src: 10-bestbooks.conf.j2
+    dest: /etc/redis/conf.d/10-bestbooks.conf
+    owner: redis
+    group: redis
+    mode: "0640"
+  notify: Restart redis
+
+# Redis has no conf.d convention of its own — it takes a single config file and
+# `include` wins only when it comes last. So the packaged redis.conf gets one
+# appended line pointing at our drop-in, which keeps the rest of it untouched.
+- name: Include the drop-in from the packaged config
+  ansible.builtin.lineinfile:
+    path: /etc/redis/redis.conf
+    line: include /etc/redis/conf.d/10-bestbooks.conf
+    insertafter: EOF
+    owner: redis
+    group: redis
+    mode: "0640"
+  notify: Restart redis
+
+- name: Start and enable Redis
+  ansible.builtin.systemd_service:
+    name: redis-server
+    state: started
+    enabled: true

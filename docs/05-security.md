@@ -10,8 +10,8 @@ The 2026-standard SPA pattern: **short-lived access JWT in memory + opaque rotat
 
 | Token | Form | Lifetime | Lives | Notes |
 |---|---|---|---|---|
-| Access | JWT, HS256 via `@fastify/jwt` | 15 min | JS memory only (never storage) | Claims: `sub`, `role`, `sid`, `iss`, `aud`, `exp`, `iat`; `iss`/`aud` verified |
-| Refresh | 256-bit random, opaque | 30 d absolute, rotated on every use | httpOnly cookie: `Secure; SameSite=Strict; Path=/api/v1/auth` | Only its SHA-256 hash is stored server-side |
+| Access | JWT, HS256 via `jose` | 15 min | JS memory only (never storage) | Claims: `sub`, `role`, `sid`, `iss`, `aud`, `exp`, `iat`; `iss`/`aud` verified. `iss` = `PUBLIC_BASE_URL`, `aud` = `bestbooks-api`. |
+| Refresh | 256-bit random, opaque | 30 d absolute, rotated on every use | httpOnly cookie `bb_refresh`: `Secure; SameSite=Strict; Path=/api/v1/auth` | Cookie value is `{sessionId}.{secret}`; only the secret's SHA-256 is stored. `__Host-` is impossible here — it forbids a `Path` other than `/`. `jose` (not `@fastify/jwt`) keeps signing in `infra/` off Fastify (ADR-0003). |
 
 ```mermaid
 sequenceDiagram
@@ -25,26 +25,33 @@ sequenceDiagram
     Note over B: access token kept in memory,<br/>attached as Bearer to API calls
     B->>A: POST /auth/refresh (cookie)
     A->>R: lookup sess:{sid}, compare hash
-    alt hash matches (normal)
-        A->>R: rotate: store new hash, keep family
+    alt hash matches current (normal)
+        A->>R: rotate in place: new hash, prevTokenHash = old, rotatedAt = now
         A-->>B: new cookie + new access token
-    else hash is stale (reuse ⇒ theft signal)
-        A->>R: revoke entire family (all sess of that login)
+    else hash matches previous, within 10s (benign double-fire)
+        A->>R: re-rotate (session stays alive) — see ADR-0009
+        A-->>B: new cookie + new access token
+    else otherwise (reuse ⇒ theft signal)
+        A->>R: revoke the session
         A-->>B: 409 — full re-login required
     end
 ```
 
+There is **one `sess:{sid}` record per login**, with a stable `sid`; the secret is rotated in place. "The family" is that record — reuse revokes it (`DEL sess:{sid}` + drop from `sessidx`). A missing/expired session on refresh is a **401**; **409** is reserved for detected reuse specifically.
+
 Decisions and rationale:
-- **HS256, not RS256/EdDSA**: one service signs and verifies; asymmetric keys buy nothing until a second verifier exists. Secret is 256-bit, Ansible-Vault-managed, rotatable (dual-secret verify window).
-- **Reuse detection**: a refresh token presented twice means it was stolen or the client double-fired; revoking the whole session family is the OWASP-recommended response.
+- **HS256, not RS256/EdDSA**: one service signs and verifies; asymmetric keys buy nothing until a second verifier exists. Secret is 256-bit, Ansible-Vault-managed, rotatable (dual-secret verify window: `JWT_SECRET` signs, `JWT_SECRET_PREVIOUS` still verifies).
+- **Reuse detection with a grace window** ([ADR-0009](adr/0009-refresh-reuse-grace-window.md)): a refresh token presented twice is theft **or** a benign double-fire (boot refresh, StrictMode, racing tabs). Within a 10-second grace window a stale-by-one token is re-rotated (session kept); beyond it, reuse revokes the session. The web client also single-flights refresh.
 - **Logout everywhere**: `sessidx:{userId}` lets password change / reset revoke all sessions.
 - **Redis-down failure mode** (accepted): refresh and login fail closed; outstanding access tokens keep working ≤15 min. Monit restarts Redis well inside that window.
 - **CSRF**: refresh cookie is `SameSite=Strict` + `Path`-scoped, and state-changing routes require the Bearer header (which a cross-site form can't set). The API additionally rejects cross-origin `Origin` headers. No CSRF token machinery needed.
-- **Email flows**: verification (24h) and reset (1h) tokens are 256-bit random, stored **hashed** in Redis, single-use. Register/forgot endpoints return uniform responses (no account enumeration) and are rate-limited.
+- **Email flows**: verification (24h) and reset (1h) tokens are 256-bit random, stored **hashed** in Redis, single-use. Register/forgot endpoints return uniform responses (no account enumeration) and are rate-limited. A duplicate registration still returns 201-shaped and emails the real owner ("you already have an account") rather than the registrant. Login returns a uniform 401 for unknown-email vs wrong-password, and runs a dummy Argon2id verify on an unknown email so response timing doesn't leak account existence.
 
 ## Passwords
 
-Argon2id via the `argon2` package with OWASP-recommended params (m=19 MiB, t=2, p=1 — revisit annually). Policy: length 10–128, checked against a top-10k breached list; no composition rules, no forced rotation (NIST-aligned). Login backoff via Redis counters.
+Argon2id via `@node-rs/argon2` (napi-rs — reliable arm64 prebuilds for the Graviton release build; behind the `PasswordHasher` port, so swappable) with OWASP-recommended params (m=19 MiB, t=2, p=1 — revisit annually). Policy: length 10–128, checked against a top-10k breached list; no composition rules, no forced rotation (NIST-aligned).
+
+Rate limits are Redis-backed with a hand-rolled fixed-window limiter (atomic INCR + first-hit EXPIRE via a Lua script), keyed per docs/04 (`rl:{scope}:{key}`; login by IP + a hash of the email, so no PII in keys). A successful login clears the failure counter. (Escalating per-attempt backoff beyond the fixed window is a documented future refinement; the fixed window already delivers the observable 429 + `Retry-After`.)
 
 ## Authorization
 

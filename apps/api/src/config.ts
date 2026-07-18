@@ -26,6 +26,30 @@ const ConfigSchema = Type.Object({
   ),
   /** Git SHA of the running release, injected by the deploy pipeline; 'dev' locally. */
   APP_VERSION: Type.String({ default: 'dev', minLength: 1 }),
+
+  // Data stores (docs/03). Defaults target the local docker-compose stack so dev
+  // and tests are zero-config; prod always sets these explicitly from env.j2.
+  DATABASE_URL: Type.String({
+    default: 'postgresql://bestbooks:bestbooks@127.0.0.1:5432/bestbooks',
+    minLength: 1,
+  }),
+  REDIS_URL: Type.String({ default: 'redis://127.0.0.1:6379', minLength: 1 }),
+
+  // Auth (docs/05). The access-token signing secret; the dev default is obviously
+  // not a secret — prod always sets a 256-bit value from Vault.
+  JWT_SECRET: Type.String({ default: 'dev-insecure-jwt-secret-change-me', minLength: 16 }),
+  // Set only during a rotation: the previous secret, still accepted for verify so
+  // in-flight access tokens survive the window (docs/07 §Runbooks).
+  JWT_SECRET_PREVIOUS: Type.String({ default: '' }),
+
+  // Absolute base URL of the site, used to build email links and as the JWT `iss`.
+  PUBLIC_BASE_URL: Type.String({ default: 'http://localhost:5173', minLength: 1 }),
+
+  // Transactional email. 'log' writes the message to the logger (dev/test — no SES
+  // call, no sandbox limits); 'ses' sends via the instance role.
+  EMAIL_TRANSPORT: Type.Union([Type.Literal('log'), Type.Literal('ses')], { default: 'log' }),
+  EMAIL_FROM: Type.String({ default: 'Best Books Guide <no-reply@localhost>', minLength: 1 }),
+  AWS_REGION: Type.String({ default: 'eu-west-2', minLength: 1 }),
 });
 
 export type Config = Static<typeof ConfigSchema>;

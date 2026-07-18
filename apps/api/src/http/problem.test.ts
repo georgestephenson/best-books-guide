@@ -23,11 +23,11 @@ describe('statusForError', () => {
 });
 
 describe('problemFromError', () => {
-  it('exposes the message for client errors', () => {
+  it('exposes the message and a typed URI for client errors', () => {
     const problem = problemFromError(new NotFoundError('book not found'), 'req-1');
     expect(problem).toEqual({
-      type: 'about:blank',
-      title: 'NotFoundError',
+      type: 'https://bestbooks.guide/errors/not-found',
+      title: 'Not found',
       status: 404,
       detail: 'book not found',
       requestId: 'req-1',
@@ -41,7 +41,19 @@ describe('problemFromError', () => {
     expect(problem.requestId).toBe('req-2');
   });
 
+  it('maps a Fastify schema-validation error to 422 with errors[]', () => {
+    const problem = problemFromError(
+      { validation: [{ instancePath: '/email', message: 'must match pattern' }] },
+      'req-3',
+    );
+    expect(problem.status).toBe(422);
+    expect(problem.type).toBe('https://bestbooks.guide/errors/validation');
+    expect(problem.errors).toEqual([{ path: '/email', message: 'must match pattern' }]);
+  });
+
   it('handles non-Error throws', () => {
-    expect(problemFromError('weird', 'req-3').title).toBe('Error');
+    const problem = problemFromError('weird', 'req-4');
+    expect(problem.status).toBe(500);
+    expect(problem.detail).toBe('Internal Server Error');
   });
 });

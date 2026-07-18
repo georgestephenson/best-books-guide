@@ -154,7 +154,7 @@ Full-stack coverage with a fast-feedback pyramid. The gates are non-negotiable i
 - `domain/` + `app/` + `packages/shared`: **≥ 90% lines and branches** — this is where bugs are expensive and tests are cheap.
 - Repo-wide: **≥ 80%**, plus a **ratchet**: a PR may never lower recorded coverage. Adapters and routes earn their coverage through integration tests, UI through component tests; we gate hard numbers where they're honest rather than worship 100%-line coverage, which breeds assertion-free tests.
 
-**Speed budget**: unit + integration **< 2 min** (so `npm test` stays a reflex); whole PR pipeline **< 7 min** wall-clock. Tactics: cached `npm ci`, parallel CI jobs (lint+typecheck / test / build+e2e), one shared PG instance with per-suite schemas, Playwright on PRs limited to a ≤3-journey smoke (full suite on `main` + nightly). If the budget breaks, fixing it is a `ci`-typed task, not an aspiration.
+**Speed budget**: unit + integration **< 2 min** (so `npm test` stays a reflex); whole PR pipeline **< 7 min** wall-clock. Tactics: cached `npm ci`, parallel CI jobs (lint+typecheck / test / build+e2e), one shared PG instance for integration tests (a dedicated `bestbooks_test` database, migrated once in Vitest `globalSetup`, then `TRUNCATE … RESTART IDENTITY CASCADE` + Redis `FLUSHDB` between tests with `fileParallelism` off — simpler than per-suite schemas, since Drizzle migrations and `CREATE EXTENSION` are database-scoped; revisit if the budget breaks), Playwright on PRs limited to a ≤3-journey smoke (full suite on `main` + nightly). If the budget breaks, fixing it is a `ci`-typed task, not an aspiration.
 
 ## What we deliberately did NOT include
 

@@ -2,3 +2,9 @@
 - name: Reload systemd
   ansible.builtin.systemd_service:
     daemon_reload: true
+
+- name: Restart bestbooks-api
+  ansible.builtin.systemd_service:
+    name: bestbooks-api
+    state: restarted
+  when: app_current_release.stat.exists

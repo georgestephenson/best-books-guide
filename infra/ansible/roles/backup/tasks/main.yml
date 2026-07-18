@@ -1,0 +1,48 @@
+---
+# The buckets and their lifecycle rules already exist in Terraform
+# (infra/terraform/modules/storage), and the instance role already carries
+# BackupsMediaReadWrite — so this role is automation only, no new AWS surface.
+- name: Install the backup scripts
+  ansible.builtin.template:
+    src: "bestbooks-backup-{{ item }}.j2"
+    dest: "/usr/local/bin/bestbooks-backup-{{ item }}"
+    owner: root
+    group: root
+    mode: "0750"
+  loop: "{{ backup_jobs | map(attribute='name') | list }}"
+
+- name: Install the backup service units
+  ansible.builtin.template:
+    src: backup.service.j2
+    dest: "/etc/systemd/system/bestbooks-backup-{{ item.name }}.service"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ backup_jobs }}"
+  loop_control:
+    label: "{{ item.name }}"
+  notify: Reload systemd
+
+- name: Install the backup timer units
+  ansible.builtin.template:
+    src: backup.timer.j2
+    dest: "/etc/systemd/system/bestbooks-backup-{{ item.name }}.timer"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ backup_jobs }}"
+  loop_control:
+    label: "{{ item.name }}"
+  notify: Reload systemd
+
+- name: Reload systemd before enabling the timers
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start the backup timers
+  ansible.builtin.systemd_service:
+    name: "bestbooks-backup-{{ item.name }}.timer"
+    state: started
+    enabled: true
+  loop: "{{ backup_jobs }}"
+  loop_control:
+    label: "{{ item.name }}"

@@ -6,10 +6,23 @@
 #   terraform -chdir=infra/terraform/envs/prod output -raw ses_smtp_password
 #
 # vault.yml stays LOCAL (gitignored) — this is a public repo, so we don't publish
-# even encrypted secrets. Recreate it from this example on a fresh clone. The
-# CI-run deploy.yml doesn't need it; only site.yml (certbot/Monit) does.
+# even encrypted secrets. Recreate it from this example on a fresh clone. Only
+# site.yml needs it (it renders the app's .env from these values); the CI-run
+# deploy.yml reads DATABASE_URL back from that rendered .env, so it needs no vault.
 
 vault_admin_email: "you@example.com" # certbot + Monit alert recipient (personal PII → keep out of the repo)
 vault_monit_smtp_username: "AKIA_EXAMPLE"
 vault_monit_smtp_password: "example-region-derived-smtp-password"
-# M2 adds: vault_db_password, vault_jwt_secret, …
+
+# Application database role. Changing this needs an ALTER ROLE ... PASSWORD too —
+# the postgresql role only sets it on create.
+vault_db_password: "generate-me"
+
+# 256-bit access-token signing secret (docs/05). Generate with:
+#   openssl rand -base64 32
+vault_jwt_secret: "generate-me"
+
+# Optional, and only during a rotation: set this to the OLD secret so in-flight
+# access tokens keep verifying, deploy, then delete the key and deploy again
+# (docs/07 §Runbooks — rotate secrets).
+# vault_jwt_secret_previous: ""

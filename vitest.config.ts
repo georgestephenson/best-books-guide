@@ -16,6 +16,12 @@ const sharedAlias = {
 
 export default defineConfig({
   test: {
+    // Serialize test files across the whole run. The integration files share one
+    // `bestbooks_test` database and TRUNCATE between tests (docs/02), so two of them
+    // running concurrently would wipe each other's rows mid-test. The suite is small
+    // enough (~seconds) that global serialization stays well inside the speed budget.
+    // Must be set at the root, not per-project — the project-level flag is ignored.
+    fileParallelism: false,
     projects: [
       {
         resolve: { alias: sharedAlias },
@@ -23,7 +29,27 @@ export default defineConfig({
       },
       {
         resolve: { alias: sharedAlias },
-        test: { name: 'api', root: './apps/api', environment: 'node' },
+        // Unit tests only — pure use-cases and HTTP wiring with in-memory fakes.
+        // Runs without any data stores.
+        test: {
+          name: 'api',
+          root: './apps/api',
+          environment: 'node',
+          include: ['src/**/*.test.ts'],
+        },
+      },
+      {
+        resolve: { alias: sharedAlias },
+        // Integration tests against real PG + Redis (docs/02). globalSetup migrates
+        // once. Needs the stores up (`docker compose up -d`) — run `npm run test:unit`
+        // to skip. Coverage still aggregates into the one report via `npm test`.
+        test: {
+          name: 'api-integration',
+          root: './apps/api',
+          environment: 'node',
+          include: ['test/**/*.test.ts'],
+          globalSetup: ['./test/global-setup.ts'],
+        },
       },
       {
         resolve: { alias: sharedAlias },
@@ -41,11 +67,15 @@ export default defineConfig({
       include: ['packages/*/src/**', 'apps/*/src/**'],
       exclude: [
         '**/*.test.{ts,tsx}',
+        '**/*-fakes.ts', // in-memory port doubles used only by unit tests
         '**/test/**',
         '**/*.d.ts',
         '**/index.ts', // barrel re-exports — no logic to cover
-        'apps/api/src/main.ts', // composition root / process bootstrap — exercised by deploy smoke, not unit tests
+        'apps/api/src/main.ts', // process bootstrap — exercised by deploy smoke, not unit tests
+        'apps/api/src/composition.ts', // hand-wired DI root — construction only, no logic to unit-test
+        'apps/api/src/migrate.ts', // one-shot migration CLI — exercised by the deploy step and globalSetup
         'apps/web/src/main.tsx',
+        'apps/web/src/routes.tsx', // route table / router bootstrap
         'apps/web/src/lib/queryClient.ts', // DI bootstrap wiring
       ],
       thresholds: {
