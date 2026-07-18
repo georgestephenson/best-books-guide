@@ -75,11 +75,22 @@
         src: "{{ app_dir }}/shared/.env"
       register: app_env_file
 
+    # Match the value directly (lookbehind), NOT via a capture group: a capture-group
+    # backref makes regex_search return a *list*, which stringifies to "['...']" and
+    # pg then parses to the bogus host 'base' (getaddrinfo EAI_AGAIN).
     - name: Extract DATABASE_URL
       ansible.builtin.set_fact:
         app_database_url: >-
           {{ (app_env_file.content | b64decode)
-             | regex_search('^DATABASE_URL=(.+)$', '\1', multiline=True) }}
+             | regex_search('(?<=^DATABASE_URL=).+', multiline=True) }}
+
+    # Fail loud here rather than at pg-connect time if the .env is missing/malformed.
+    - name: Sanity-check the extracted DATABASE_URL
+      ansible.builtin.assert:
+        that:
+          - app_database_url is string
+          - app_database_url.startswith('postgresql://')
+        fail_msg: "DATABASE_URL missing or malformed in {{ app_dir }}/shared/.env"
 
     # dist/migrate.js takes a PG advisory lock, so overlapping deploys can't race.
     # Only DATABASE_URL is needed; every other config key has a schema default.
