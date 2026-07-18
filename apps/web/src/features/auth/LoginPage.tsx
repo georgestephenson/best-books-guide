@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { typeboxResolver } from '@hookform/resolvers/typebox';
+import { friendlyResolver } from './friendlyResolver.js';
 import { Link, useNavigate } from 'react-router';
 import { LoginBody } from '@bestbooks/shared';
 import { useAuth } from './AuthContext.js';
@@ -14,7 +14,7 @@ export function LoginPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginBody>({ resolver: typeboxResolver(LoginBody) });
+  } = useForm<LoginBody>({ resolver: friendlyResolver(LoginBody) });
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);

@@ -19,13 +19,21 @@ function renderLogin() {
 }
 
 describe('LoginPage', () => {
+  it('shows friendly messages for empty fields', async () => {
+    renderLogin();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    expect(await screen.findByText(/enter your email address/i)).toBeInTheDocument();
+    expect(screen.getByText(/use at least 10 characters/i)).toBeInTheDocument();
+  });
+
   it('validates the email format before submitting', async () => {
     renderLogin();
     const user = userEvent.setup();
     await user.type(screen.getByLabelText(/email/i), 'not-an-email');
     await user.type(screen.getByLabelText(/password/i), 'correcthorse');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
-    expect(await screen.findByText(/expected string to match/i)).toBeInTheDocument();
+    expect(await screen.findByText(/enter a valid email address/i)).toBeInTheDocument();
   });
 
   it('signs in and navigates home on success', async () => {

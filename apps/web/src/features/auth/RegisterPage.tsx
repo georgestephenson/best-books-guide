@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { typeboxResolver } from '@hookform/resolvers/typebox';
+import { friendlyResolver } from './friendlyResolver.js';
 import { Link } from 'react-router';
 import { RegisterBody } from '@bestbooks/shared';
 import { registerRequest } from './api.js';
@@ -13,7 +13,7 @@ export function RegisterPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<RegisterBody>({ resolver: typeboxResolver(RegisterBody) });
+  } = useForm<RegisterBody>({ resolver: friendlyResolver(RegisterBody) });
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);

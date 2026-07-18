@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { typeboxResolver } from '@hookform/resolvers/typebox';
+import { friendlyResolver } from './friendlyResolver.js';
 import { Link, useSearchParams } from 'react-router';
 import { Type, type Static } from '@sinclair/typebox';
 import { resetPasswordRequest } from './api.js';
@@ -22,7 +22,7 @@ export function ResetPasswordPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<NewPasswordForm>({ resolver: typeboxResolver(NewPasswordForm) });
+  } = useForm<NewPasswordForm>({ resolver: friendlyResolver(NewPasswordForm) });
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);

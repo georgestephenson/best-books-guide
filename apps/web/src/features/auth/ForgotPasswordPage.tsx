@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { typeboxResolver } from '@hookform/resolvers/typebox';
+import { friendlyResolver } from './friendlyResolver.js';
 import { Link } from 'react-router';
 import { ForgotPasswordBody } from '@bestbooks/shared';
 import { forgotPasswordRequest } from './api.js';
@@ -13,7 +13,7 @@ export function ForgotPasswordPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<ForgotPasswordBody>({ resolver: typeboxResolver(ForgotPasswordBody) });
+  } = useForm<ForgotPasswordBody>({ resolver: friendlyResolver(ForgotPasswordBody) });
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
