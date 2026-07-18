@@ -4,6 +4,7 @@ import { SubjectPage } from './features/catalogue/SubjectPage.js';
 import { ListPage } from './features/catalogue/ListPage.js';
 import { BookPage } from './features/catalogue/BookPage.js';
 import { SeriesPage } from './features/catalogue/SeriesPage.js';
+import { NotFoundPage } from './features/catalogue/NotFoundPage.js';
 import { CataloguePage } from './features/admin/CataloguePage.js';
 import { ImportPage } from './features/admin/ImportPage.js';
 import { BookFormPage } from './features/admin/BookFormPage.js';
@@ -43,6 +44,8 @@ export const routes = [
   { path: '/verify-email', element: <VerifyEmailPage /> },
   { path: '/forgot-password', element: <ForgotPasswordPage /> },
   { path: '/reset-password', element: <ResetPasswordPage /> },
+  // Catch-all: a calm 404 for any unmatched path (docs/01 §calm by design).
+  { path: '*', element: <NotFoundPage /> },
 ];
 
 export const router = createBrowserRouter(routes);
