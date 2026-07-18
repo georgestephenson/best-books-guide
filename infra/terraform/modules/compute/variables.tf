@@ -8,11 +8,6 @@ variable "aws_region" {
   type        = string
 }
 
-variable "domain_name" {
-  description = "Domain / SES identity the host is allowed to send mail as."
-  type        = string
-}
-
 variable "instance_type" {
   description = "EC2 instance type (arm64/Graviton)."
   type        = string

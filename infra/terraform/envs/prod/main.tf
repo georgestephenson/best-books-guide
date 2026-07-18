@@ -20,7 +20,6 @@ module "compute" {
 
   project           = var.project
   aws_region        = var.aws_region
-  domain_name       = var.domain_name
   instance_type     = var.instance_type
   subnet_id         = module.network.primary_subnet_id
   security_group_id = module.network.web_security_group_id
