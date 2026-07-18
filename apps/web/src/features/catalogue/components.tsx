@@ -20,10 +20,7 @@ export function PageMeta({ title, description }: { title: string; description?: 
 /** Inline JSON-LD (schema.org). A non-JS script type, so it's exempt from the CSP. */
 export function JsonLd({ data }: { data: Record<string, unknown> }) {
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
-    />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
   );
 }
 
