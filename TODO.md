@@ -15,6 +15,7 @@ Canonical task list — see [CLAUDE.md](CLAUDE.md) for how this file is used. Ro
 - [x] **F5/F6 moderation** — any member reports (dup → 409); admin queue (`GET /admin/reviews/reports`), hide (reason the author sees) / unhide / dismiss; author still sees their own hidden review flagged.
 - [x] **F7 track-a-list** — track/untrack from list pages; member home + My Books show tracked lists with **computed** progress (series expanded, sublists rolled up; nothing stored).
 - [x] Tests: 17 API integration + 6 language-screen unit + 11 web component; concurrency/no-drift test included. Playwright drove the full member happy-path (shelve → rate → review → track → progress → moderate) in Chromium — all green.
+- [x] 2026-07-19 — UI polish: mobile nav de-cluttered (dropped the redundant "Browse" link; the site title already goes home) and the username is now a disclosure menu holding Admin + Sign out. Homepage/subject list summaries roll up sublist items so a parent whose books all live in sublists no longer reads "0 books".
 
 **Design note (flagged):** member state moved out of the public `GET /books|lists/{slug}` responses (the M2 doc sketch embedded a `viewer` block) into dedicated slug-addressed `/me/*` routes — keeps public pages anonymous + edge-cacheable and consistent with slug addressing. docs/04 updated to match.
 
