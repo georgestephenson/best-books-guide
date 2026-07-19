@@ -4,6 +4,7 @@ import {
   BookListQuery,
   BookListResponse,
   ListDetail,
+  Review,
   SeriesDetail,
   SubjectDetail,
 } from '@bestbooks/shared';
@@ -13,6 +14,7 @@ import type { GetList } from '../../app/usecases/get-list.js';
 import type { GetBooks } from '../../app/usecases/get-books.js';
 import type { GetBook } from '../../app/usecases/get-book.js';
 import type { GetSeries } from '../../app/usecases/get-series.js';
+import type { GetBookReviews } from '../../app/usecases/reviews.js';
 
 export interface CatalogueRoutesDeps {
   getSubjects: GetSubjects;
@@ -21,6 +23,7 @@ export interface CatalogueRoutesDeps {
   getBooks: GetBooks;
   getBook: GetBook;
   getSeries: GetSeries;
+  getBookReviews: GetBookReviews;
 }
 
 const SlugParams = Type.Object({ slug: Type.String({ minLength: 1, maxLength: 200 }) });
@@ -54,6 +57,14 @@ export function catalogueRoutes(deps: CatalogueRoutesDeps): FastifyPluginAsyncTy
       '/books/:slug',
       { schema: { params: SlugParams, response: { 200: BookDetail } } },
       async (request) => deps.getBook.execute(request.params.slug),
+    );
+
+    // Public, visible reviews for a book page (docs/01 F5). Anonymous — the caller's
+    // own review (incl. a hidden one) comes from GET /me/books/{slug}.
+    app.get(
+      '/books/:slug/reviews',
+      { schema: { params: SlugParams, response: { 200: Type.Array(Review) } } },
+      async (request) => deps.getBookReviews.execute(request.params.slug),
     );
 
     app.get(

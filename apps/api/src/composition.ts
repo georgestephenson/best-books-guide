@@ -12,6 +12,10 @@ import { DrizzleUserRepository } from './infra/db/drizzle-user-repository.js';
 import { DrizzleCatalogueRepository } from './infra/db/drizzle-catalogue-repository.js';
 import { DrizzleAdminCatalogueRepository } from './infra/db/drizzle-admin-catalogue-repository.js';
 import { DrizzleAdminCurationRepository } from './infra/db/drizzle-admin-curation-repository.js';
+import { DrizzleReadingStatusRepository } from './infra/db/drizzle-reading-status-repository.js';
+import { DrizzleReviewRepository } from './infra/db/drizzle-review-repository.js';
+import { DrizzleTrackedListRepository } from './infra/db/drizzle-tracked-list-repository.js';
+import { ObscenityLanguageScreen } from './infra/moderation/obscenity-language-screen.js';
 import { RedisCache } from './infra/redis/redis-cache.js';
 import { FsImageStore } from './infra/media/fs-image-store.js';
 import { FetchOpenLibraryClient } from './infra/openlibrary/fetch-open-library-client.js';
@@ -77,6 +81,30 @@ import {
   SetSeriesBooks,
   UpdateSeries,
 } from './app/usecases/admin-series.js';
+import {
+  GetMyBooks,
+  RemoveReadingStatus,
+  SetReadingStatus,
+} from './app/usecases/reading-status.js';
+import {
+  DeleteReview,
+  GetBookReviews,
+  GetViewerBook,
+  ReportReview,
+  UpsertReview,
+} from './app/usecases/reviews.js';
+import {
+  GetListTracking,
+  GetTrackedLists,
+  TrackList,
+  UntrackList,
+} from './app/usecases/tracked-lists.js';
+import {
+  HideReview,
+  ListReviewReports,
+  ResolveReport,
+  UnhideReview,
+} from './app/usecases/moderation.js';
 import { createAuthGuards } from './http/auth-guards.js';
 import type { ServerDeps } from './http/server.js';
 
@@ -105,6 +133,10 @@ export function composeServerDeps(input: CompositionInput): ServerDeps {
   const catalogue = new DrizzleCatalogueRepository(db);
   const adminCatalogue = new DrizzleAdminCatalogueRepository(db);
   const adminCuration = new DrizzleAdminCurationRepository(db);
+  const readingStatuses = new DrizzleReadingStatusRepository(db);
+  const reviewsRepo = new DrizzleReviewRepository(db);
+  const trackedListsRepo = new DrizzleTrackedListRepository(db);
+  const languageScreen = new ObscenityLanguageScreen();
   const cache = new RedisCache(redis);
   const imageStore = input.imageStore ?? new FsImageStore(config.MEDIA_DIR);
   const openLibrary = input.openLibrary ?? new FetchOpenLibraryClient(config.OPENLIBRARY_BASE_URL);
@@ -217,6 +249,21 @@ export function composeServerDeps(input: CompositionInput): ServerDeps {
       getBooks: new GetBooks(catalogue),
       getBook: new GetBook(catalogue),
       getSeries: new GetSeries(catalogue),
+      getBookReviews: new GetBookReviews(reviewsRepo),
+    },
+    member: {
+      guards,
+      getMyBooks: new GetMyBooks(readingStatuses),
+      setReadingStatus: new SetReadingStatus(readingStatuses, clock),
+      removeReadingStatus: new RemoveReadingStatus(readingStatuses),
+      getViewerBook: new GetViewerBook(readingStatuses, reviewsRepo),
+      upsertReview: new UpsertReview(reviewsRepo, languageScreen),
+      deleteReview: new DeleteReview(reviewsRepo),
+      reportReview: new ReportReview(reviewsRepo),
+      getTrackedLists: new GetTrackedLists(trackedListsRepo),
+      trackList: new TrackList(trackedListsRepo),
+      untrackList: new UntrackList(trackedListsRepo),
+      getListTracking: new GetListTracking(trackedListsRepo),
     },
     sitemap: {
       getSitemap: new GetSitemap(catalogue),
@@ -253,6 +300,10 @@ export function composeServerDeps(input: CompositionInput): ServerDeps {
       updateSeries: new UpdateSeries(adminCuration),
       deleteSeries: new DeleteSeries(adminCuration),
       setSeriesBooks: new SetSeriesBooks(adminCuration),
+      listReviewReports: new ListReviewReports(reviewsRepo),
+      hideReview: new HideReview(reviewsRepo),
+      unhideReview: new UnhideReview(reviewsRepo),
+      resolveReport: new ResolveReport(reviewsRepo),
     },
   };
 }

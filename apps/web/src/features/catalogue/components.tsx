@@ -106,6 +106,14 @@ function SiteHeader() {
           </Link>
           {status === 'loading' ? null : user ? (
             <>
+              <Link className="text-muted hover:text-accent" to="/my-books">
+                My Books
+              </Link>
+              {user.role === 'admin' ? (
+                <Link className="text-muted hover:text-accent" to="/admin">
+                  Admin
+                </Link>
+              ) : null}
               <span className="text-muted">{user.displayName}</span>
               <button
                 type="button"

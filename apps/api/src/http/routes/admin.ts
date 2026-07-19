@@ -9,12 +9,14 @@ import {
   AdminSubject,
   BookRefResponse,
   BookWriteBody,
+  HideReviewBody,
   ImportBookBody,
   ListCreateBody,
   ListUpdateBody,
   OpenLibraryResult,
   OpenLibrarySearchQuery,
   ReorderSubjectsBody,
+  ReviewReport,
   SeriesWriteBody,
   SetListItemsBody,
   SetSeriesBooksBody,
@@ -53,6 +55,12 @@ import type {
   SetSeriesBooks,
   UpdateSeries,
 } from '../../app/usecases/admin-series.js';
+import type {
+  HideReview,
+  ListReviewReports,
+  ResolveReport,
+  UnhideReview,
+} from '../../app/usecases/moderation.js';
 
 export interface AdminRoutesDeps {
   guards: AuthGuards;
@@ -80,9 +88,15 @@ export interface AdminRoutesDeps {
   updateSeries: UpdateSeries;
   deleteSeries: DeleteSeries;
   setSeriesBooks: SetSeriesBooks;
+  listReviewReports: ListReviewReports;
+  hideReview: HideReview;
+  unhideReview: UnhideReview;
+  resolveReport: ResolveReport;
 }
 
 const IdParams = Type.Object({ id: Type.String({ minLength: 1, maxLength: 40 }) });
+const ReviewIdParams = Type.Object({ reviewId: Type.String({ minLength: 1, maxLength: 40 }) });
+const ReportIdParams = Type.Object({ reportId: Type.String({ minLength: 1, maxLength: 40 }) });
 const BookListQuery = Type.Object({ search: Type.Optional(Type.String({ maxLength: 200 })) });
 const IdSlug = Type.Object({ id: Type.String(), slug: Type.String() });
 
@@ -256,5 +270,39 @@ export function adminRoutes(deps: AdminRoutesDeps): FastifyPluginAsyncTypebox {
       await deps.deleteSeries.execute(request.params.id);
       return reply.status(204).send();
     });
+
+    // --- moderation (F5/F6): the reported-review queue ---
+    app.get(
+      '/reviews/reports',
+      { schema: { response: { 200: Type.Array(ReviewReport) } } },
+      async () => deps.listReviewReports.execute(),
+    );
+
+    app.post(
+      '/reviews/:reviewId/hide',
+      { schema: { params: ReviewIdParams, body: HideReviewBody } },
+      async (request, reply) => {
+        await deps.hideReview.execute(request.params.reviewId, request.user!.id, request.body);
+        return reply.status(204).send();
+      },
+    );
+
+    app.post(
+      '/reviews/:reviewId/unhide',
+      { schema: { params: ReviewIdParams } },
+      async (request, reply) => {
+        await deps.unhideReview.execute(request.params.reviewId);
+        return reply.status(204).send();
+      },
+    );
+
+    app.post(
+      '/reports/:reportId/resolve',
+      { schema: { params: ReportIdParams } },
+      async (request, reply) => {
+        await deps.resolveReport.execute(request.params.reportId, request.user!.id);
+        return reply.status(204).send();
+      },
+    );
   };
 }

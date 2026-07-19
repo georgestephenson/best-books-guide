@@ -12,6 +12,7 @@ import { healthRoutes } from './routes/health.js';
 import { authRoutes, type AuthRoutesDeps } from './routes/auth.js';
 import { meRoutes, type MeRoutesDeps } from './routes/me.js';
 import { catalogueRoutes, type CatalogueRoutesDeps } from './routes/catalogue.js';
+import { memberRoutes, type MemberRoutesDeps } from './routes/member.js';
 import { sitemapRoutes, type SitemapRoutesDeps } from './routes/sitemap.js';
 import { adminRoutes, type AdminRoutesDeps } from './routes/admin.js';
 import { problemFromError } from './problem.js';
@@ -24,6 +25,7 @@ export interface ServerDeps {
   auth?: AuthRoutesDeps;
   me?: MeRoutesDeps;
   catalogue?: CatalogueRoutesDeps;
+  member?: MemberRoutesDeps;
   sitemap?: SitemapRoutesDeps;
   admin?: AdminRoutesDeps;
 }
@@ -80,6 +82,9 @@ export function buildServer(deps: ServerDeps): FastifyInstance {
   }
   if (deps.catalogue) {
     void app.register(catalogueRoutes(deps.catalogue), { prefix: API_BASE_PATH });
+  }
+  if (deps.member) {
+    void app.register(memberRoutes(deps.member), { prefix: API_BASE_PATH });
   }
   if (deps.sitemap) {
     // Root-mounted: sitemap.xml / robots.txt live at the site root, not under /api/v1.

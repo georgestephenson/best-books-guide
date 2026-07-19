@@ -8,4 +8,7 @@ export const handlers = [
     HttpResponse.json({ status: 'ok', version: 'test', uptimeSeconds: 1, db: true, redis: true }),
   ),
   http.post(`${API_BASE_PATH}/auth/refresh`, () => new HttpResponse(null, { status: 401 })),
+  // Book pages always load their public reviews (docs/01 F5) — default to none so any
+  // BookPage render is self-contained; member tests override per-case.
+  http.get(`${API_BASE_PATH}/books/:slug/reviews`, () => HttpResponse.json([])),
 ];

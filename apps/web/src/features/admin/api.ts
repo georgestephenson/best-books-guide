@@ -9,9 +9,11 @@ import {
   type AdminSubject,
   type BookRefResponse,
   type BookWriteBody,
+  type HideReviewBody,
   type ListCreateBody,
   type ListUpdateBody,
   type OpenLibraryResult,
+  type ReviewReport,
   type SeriesWriteBody,
   type SetListItemsBody,
   type SetSeriesBooksBody,
@@ -87,6 +89,19 @@ export const deleteSeries = (id: string): Promise<void> =>
   apiJson(`${ADMIN}/series/${id}`, send('DELETE'));
 export const setSeriesBooks = (id: string, body: SetSeriesBooksBody): Promise<AdminSeriesDetail> =>
   apiJson(`${ADMIN}/series/${id}/books`, send('PUT', body));
+
+// --- moderation (F5/F6) ---
+export const listReviewReports = (): Promise<ReviewReport[]> => apiJson(`${ADMIN}/reviews/reports`);
+export const hideReview = (reviewId: string, body: HideReviewBody): Promise<void> =>
+  apiJson(`${ADMIN}/reviews/${reviewId}/hide`, send('POST', body));
+export const unhideReview = (reviewId: string): Promise<void> =>
+  apiJson(`${ADMIN}/reviews/${reviewId}/unhide`, send('POST'));
+export const resolveReport = (reportId: string): Promise<void> =>
+  apiJson(`${ADMIN}/reports/${reportId}/resolve`, send('POST'));
+
+export const moderationKeys = {
+  reports: ['admin', 'moderation', 'reports'] as const,
+};
 
 export const curationKeys = {
   lists: ['admin', 'lists'] as const,

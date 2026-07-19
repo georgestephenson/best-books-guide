@@ -46,15 +46,17 @@ The riskiest integrations, done while the app is trivial. App half first (verifi
 
 **Exit criteria**: a visitor can browse real curated lists on prod; a series renders as one ranked list item with its own page; Lighthouse ≥ 90 perf/a11y on list + book pages.
 
-## M4 — Member features [M]
+## M4 — Member features [M] *(BUILT + browser-verified locally; not yet deployed)*
 
-- Migrations: reading_statuses, reviews, review_reports, tracked_lists; aggregate maintenance.
-- Shelf upsert + My Books; ratings + reviews (verified-email gate); report → admin queue → hide.
-- Track-a-list (F7): track/untrack from list pages; member home shows tracked lists with computed progress (% read · % reading; series expanded, sublists rolled up).
-- Automated language screen on review submit (maintained wordlist matcher, e.g. `obscenity`): severe → auto-hide + system report; mild → auto-report into the same queue ([01](01-product.md) F5, [03](03-data-model.md) §review_reports).
-- Optimistic UI for shelf/rating via TanStack Query.
+- ✅ Migration 0002: reading_statuses, reviews, review_reports, tracked_lists (docs/03); CASCADE FKs + partial indexes; drizzle-generated (no hand-augmentation this time).
+- ✅ Shelf upsert + My Books; ratings + reviews (verified-email gate); report → admin queue → hide/unhide/dismiss.
+- ✅ **Aggregate maintenance**: `books.rating_avg/count` recomputed over visible reviews in the *same transaction* as any insert/update/delete/hide, serialised by a per-book `SELECT … FOR UPDATE` so concurrent writers can't drift the count — proven by a concurrency test.
+- ✅ Track-a-list (F7): track/untrack from list pages; member home + My Books show tracked lists with **computed** progress (% read · % reading; series expanded, sublists rolled up; nothing stored).
+- ✅ Automated language screen on review submit (`obscenity`, leetspeak/Scunthorpe-aware): severe → auto-hide + system report; mild → publish + auto-report; clean → publish ([01](01-product.md) F5, [03](03-data-model.md) §review_reports). Severe wordlist is base64-encoded in source (public repo), decoded at load.
+- ✅ Optimistic/invalidating UI for shelf/rating/track via TanStack Query.
+- ✅ **API-shape decision**: member state lives on dedicated slug-addressed `/me/*` routes, not embedded as a `viewer` block in the public `GET /books|lists/{slug}` responses — public pages stay anonymous + edge-cacheable, and addressing stays slug-based. docs/04 updated to match the M2 sketch it supersedes.
 
-**Exit criteria**: MVP feature set F1–F7 complete on prod; aggregates never drift under concurrent review writes (test exists); Playwright journeys cover the member happy path end-to-end.
+**Exit criteria**: MVP feature set F1–F7 complete on prod; aggregates never drift under concurrent review writes (test exists); Playwright journeys cover the member happy path end-to-end. *Status:* F1–F7 complete and green locally, no-drift test in place, and a Playwright run drove shelve → rate → review → track → progress → moderate in Chromium; **prod deploy + on-prod confirmation still pending.**
 
 ## M5 — Launch hardening [S] → 🚀
 

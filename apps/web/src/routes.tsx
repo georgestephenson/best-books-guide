@@ -13,6 +13,8 @@ import { ListsPage } from './features/admin/ListsPage.js';
 import { ListBuilderPage } from './features/admin/ListBuilderPage.js';
 import { SeriesListPage } from './features/admin/SeriesListPage.js';
 import { SeriesBuilderPage } from './features/admin/SeriesBuilderPage.js';
+import { ModerationPage } from './features/admin/ModerationPage.js';
+import { MyBooksPage } from './features/member/MyBooksPage.js';
 import { LoginPage } from './features/auth/LoginPage.js';
 import { RegisterPage } from './features/auth/RegisterPage.js';
 import { VerifyEmailPage } from './features/auth/VerifyEmailPage.js';
@@ -30,6 +32,7 @@ export const routes = [
   { path: '/lists/:slug', element: <ListPage /> },
   { path: '/books/:slug', element: <BookPage /> },
   { path: '/series/:slug', element: <SeriesPage /> },
+  { path: '/my-books', element: <MyBooksPage /> },
   { path: '/admin', element: <CataloguePage /> },
   { path: '/admin/import', element: <ImportPage /> },
   { path: '/admin/books/new', element: <BookFormPage /> },
@@ -39,6 +42,7 @@ export const routes = [
   { path: '/admin/lists/:id', element: <ListBuilderPage /> },
   { path: '/admin/series', element: <SeriesListPage /> },
   { path: '/admin/series/:id', element: <SeriesBuilderPage /> },
+  { path: '/admin/reviews', element: <ModerationPage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
   { path: '/verify-email', element: <VerifyEmailPage /> },

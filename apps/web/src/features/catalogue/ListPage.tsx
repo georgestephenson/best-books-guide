@@ -12,6 +12,7 @@ import {
   PublicLayout,
   Rating,
 } from './components.js';
+import { TrackButton } from '../member/TrackButton.js';
 
 function Item({ item }: { item: ListItem }) {
   const isBook = item.type === 'book';
@@ -115,6 +116,11 @@ export function ListPage() {
                 ? `${data.items.length} ${data.items.length === 1 ? 'entry' : 'entries'} · ranked`
                 : `${data.sublists.length} reading ${data.sublists.length === 1 ? 'path' : 'paths'}`}
             </p>
+            {data.items.length > 0 ? (
+              <div className="mt-4">
+                <TrackButton slug={data.slug} />
+              </div>
+            ) : null}
           </header>
 
           {data.items.length > 0 ? (
