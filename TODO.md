@@ -17,8 +17,8 @@ Canonical task list — see [CLAUDE.md](CLAUDE.md) for how this file is used. Ro
 
 **To finish shipping M3:**
 - [ ] Review/merge PRs for slices 5 (`feat/m3-admin-catalogue`) and 6 (`feat/m3-list-series-builder`)
-- [ ] Deploy `main`, run `seed:catalogue` on the host, `promote-admin` your account — then browse real lists on `https://bestbooks.guide`
-- [ ] Confirm the exit criteria **on prod** + run Lighthouse (≥90 perf/a11y) on a list + book page
+- [x] 2026-07-19 — Deploy `main`, run `seed:catalogue` on the host, `promote-admin` your account — real lists live on `https://bestbooks.guide` (3 subjects, 20 books, 5 lists)
+- [x] 2026-07-19 — Exit criteria confirmed **on prod**; Lighthouse (mobile) list + book pages: **perf 97, a11y 100** (was 81/93 — fixed by nginx gzip for JS/CSS + WCAG AA contrast/heading-order). Runbook `.env` bash-sourcing bug fixed en route (docs/07)
 - [ ] Note: list/series reorder ships as up/down controls (docs/01 F6 says "drag" — deferred; up/down meets the ranking need)
 
 ## Carry-over / follow-ups (from M1–M2)
