@@ -38,6 +38,25 @@ server {
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_session_cache shared:SSL:10m;
 
+    # Compress text assets on the wire. The distro's default `gzip on` only
+    # covers text/html, so the content-hashed JS/CSS bundles were served raw
+    # (~507 KiB) — the dominant drag on mobile Lighthouse perf (81 → target ≥90,
+    # M3 exit criteria, docs/08). gzip_types adds them back; text/html is always
+    # compressed and needn't be listed.
+    gzip on;
+    gzip_vary on;
+    gzip_comp_level 6;
+    gzip_min_length 1024;
+    gzip_proxied any;
+    gzip_types
+        application/javascript
+        application/json
+        application/xml
+        image/svg+xml
+        text/css
+        text/plain
+        text/xml;
+
     root {{ app_dir }}/current/apps/web/dist;
     index index.html;
 
