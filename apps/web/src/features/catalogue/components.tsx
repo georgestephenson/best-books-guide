@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { ApiError } from '../../lib/api.js';
 import { useAuth } from '../auth/AuthContext.js';
@@ -92,6 +92,91 @@ export function Crumbs({ trail }: { trail: { label: string; to?: string }[] }) {
   );
 }
 
+/**
+ * The signed-in reader's name, opening a menu with the account-level actions
+ * (Admin, Sign out) — a disclosure so the nav stays uncluttered on mobile.
+ * Closes on outside click, Escape, or choosing an item.
+ */
+function UserMenu({
+  displayName,
+  isAdmin,
+  onSignOut,
+}: {
+  displayName: string;
+  isAdmin: boolean;
+  onSignOut: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(e: PointerEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        className="flex items-center gap-1 text-muted hover:text-accent"
+        aria-haspopup="true"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        {displayName}
+        <svg
+          className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
+          viewBox="0 0 12 12"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M3 4.5 6 7.5 9 4.5"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      {open ? (
+        <div className="absolute right-0 z-10 mt-2 min-w-40 rounded-md border border-line bg-panel py-1 shadow-lg">
+          {isAdmin ? (
+            <Link
+              className="block px-4 py-2 text-muted hover:bg-accent-wash hover:text-accent"
+              to="/admin"
+              onClick={() => setOpen(false)}
+            >
+              Admin
+            </Link>
+          ) : null}
+          <button
+            type="button"
+            className="block w-full px-4 py-2 text-left text-muted hover:bg-accent-wash hover:text-accent"
+            onClick={() => {
+              setOpen(false);
+              onSignOut();
+            }}
+          >
+            Sign out
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function SiteHeader() {
   const { user, status, logout } = useAuth();
   return (
@@ -101,27 +186,16 @@ function SiteHeader() {
           Best Books Guide
         </Link>
         <nav className="flex items-center gap-4 font-sans text-sm">
-          <Link className="text-muted hover:text-accent" to="/">
-            Browse
-          </Link>
           {status === 'loading' ? null : user ? (
             <>
               <Link className="text-muted hover:text-accent" to="/my-books">
                 My Books
               </Link>
-              {user.role === 'admin' ? (
-                <Link className="text-muted hover:text-accent" to="/admin">
-                  Admin
-                </Link>
-              ) : null}
-              <span className="text-muted">{user.displayName}</span>
-              <button
-                type="button"
-                className="text-muted hover:text-accent"
-                onClick={() => void logout()}
-              >
-                Sign out
-              </button>
+              <UserMenu
+                displayName={user.displayName}
+                isAdmin={user.role === 'admin'}
+                onSignOut={() => void logout()}
+              />
             </>
           ) : (
             <Link className="text-accent hover:underline" to="/login">

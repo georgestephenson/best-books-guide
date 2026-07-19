@@ -169,9 +169,11 @@ describe('public catalogue API (integration)', () => {
   it('GET /subjects/:slug 200 with lists, 404 for unknown', async () => {
     const ok = await get('/api/v1/subjects/philosophy');
     expect(ok.statusCode).toBe(200);
-    expect((ok.json() as SubjectDetail).lists.map((l) => l.slug)).toEqual([
-      'philosophy-foundations',
-    ]);
+    const philosophy = ok.json() as SubjectDetail;
+    expect(philosophy.lists.map((l) => l.slug)).toEqual(['philosophy-foundations']);
+    // Foundations has no direct items — its one book lives in the sublist, and
+    // the summary count rolls that up rather than reporting 0.
+    expect(philosophy.lists[0]).toMatchObject({ slug: 'philosophy-foundations', itemCount: 1 });
     const missing = await get('/api/v1/subjects/nope');
     expect(missing.statusCode).toBe(404);
     expect(missing.headers['content-type']).toContain('application/problem+json');

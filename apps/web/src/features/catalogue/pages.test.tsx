@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router';
 import {
   API_BASE_PATH,
@@ -251,7 +252,35 @@ describe('SubjectPage', () => {
       http.get(`${V1}/subjects/fiction`, () => HttpResponse.json(subjectDetail)),
     );
     renderRoute('/subjects/:slug', <SubjectPage />, '/subjects/fiction');
-    expect(await screen.findByText('Ada')).toBeInTheDocument();
+    // The name is a disclosure button; Sign out lives in the menu it opens.
+    const menu = await screen.findByRole('button', { name: /ada/i });
+    expect(screen.queryByRole('button', { name: /sign out/i })).not.toBeInTheDocument();
+    await userEvent.click(menu);
     expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument();
+  });
+
+  it('tucks the Admin link into an admin’s account menu, not the top nav', async () => {
+    server.use(
+      http.post(`${V1}/auth/refresh`, () =>
+        HttpResponse.json({
+          accessToken: 'tok',
+          expiresIn: 900,
+          user: {
+            id: 'u2',
+            email: 'ed@example.com',
+            displayName: 'Ed',
+            role: 'admin',
+            emailVerifiedAt: '2026-07-18T00:00:00.000Z',
+          },
+        }),
+      ),
+      http.get(`${V1}/subjects/fiction`, () => HttpResponse.json(subjectDetail)),
+    );
+    renderRoute('/subjects/:slug', <SubjectPage />, '/subjects/fiction');
+    // Admin isn't a top-nav link anymore — it only appears inside the open menu.
+    expect(await screen.findByRole('button', { name: /ed/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Admin' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /ed/i }));
+    expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute('href', '/admin');
   });
 });
