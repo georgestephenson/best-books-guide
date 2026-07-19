@@ -75,10 +75,17 @@ export class DrizzleCatalogueRepository implements CatalogueRepository {
     return map;
   }
 
-  /** Published top-level lists (with direct-item counts), optionally one subject. */
+  /**
+   * Published top-level lists with their book counts, optionally one subject.
+   * The count rolls up published sublists: a parent whose books all live in
+   * sublists still reports the true total (not 0). Self-join `sub` matches the
+   * list itself plus its published children, so `count(listItems.id)` sums the
+   * items across both.
+   */
   private async publishedTopLevelLists(
     subjectId?: string,
   ): Promise<Map<string, ListSummaryRow[]>> {
+    const sub = alias(lists, 'sub');
     const rows = await this.db
       .select({
         subjectId: lists.subjectId,
@@ -88,7 +95,14 @@ export class DrizzleCatalogueRepository implements CatalogueRepository {
         itemCount: sql<number>`count(${listItems.id})::int`,
       })
       .from(lists)
-      .leftJoin(listItems, eq(listItems.listId, lists.id))
+      .leftJoin(
+        sub,
+        or(
+          eq(sub.id, lists.id),
+          and(eq(sub.parentListId, lists.id), eq(sub.isPublished, true)),
+        ),
+      )
+      .leftJoin(listItems, eq(listItems.listId, sub.id))
       .where(
         and(
           eq(lists.isPublished, true),
