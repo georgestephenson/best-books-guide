@@ -1,5 +1,10 @@
 # Best Books Guide 📚
 
+[![CI](https://github.com/georgestephenson/best-books-guide/actions/workflows/ci.yml/badge.svg)](https://github.com/georgestephenson/best-books-guide/actions/workflows/ci.yml)
+[![Deploy](https://github.com/georgestephenson/best-books-guide/actions/workflows/deploy.yml/badge.svg)](https://github.com/georgestephenson/best-books-guide/actions/workflows/deploy.yml)
+[![Site](https://img.shields.io/website?url=https%3A%2F%2Fbestbooks.guide%2Fhealthz&up_message=live&down_message=down&label=bestbooks.guide)](https://bestbooks.guide/healthz)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 The best books in a simple list.
 
 Modern technology has enabled a limitless supply of information. By stripping down to the highest quality, most authoritative books on different subjects, you can cancel out the noise and use your time more efficiently. Best Books Guide is designed to keep things _simple_ and keep you _sane_.
@@ -14,7 +19,7 @@ My idea was to spin up a full stack project with the suggested tech stack, and t
 
 **Stack**: React 19 · Tailwind 4 · Fastify 5 (Node 24, TypeScript) · PostgreSQL 18 · Redis 8 · Terraform + Ansible on AWS (EC2/VPC/S3/Route53/SES) · GitHub Actions · Monit.
 
-**Status**: 🟢 live at **[bestbooks.guide](https://bestbooks.guide/healthz)** — M1 walking skeleton shipped (self-deploys from `main`, no inbound SSH). [Uptime](https://stats.uptimerobot.com/1mUEBA341u) · [roadmap](docs/08-delivery-plan.md).
+**Deployment**: self-deploys from `main` to **[bestbooks.guide](https://bestbooks.guide/healthz)** over an SSM tunnel (no inbound SSH) — the badges above track CI, the last deploy, and whether the site is up. [Uptime](https://stats.uptimerobot.com/1mUEBA341u) · [roadmap](docs/08-delivery-plan.md).
 
 ## Documentation
 
