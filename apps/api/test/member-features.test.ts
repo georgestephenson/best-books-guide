@@ -650,4 +650,133 @@ describe('member features — shelves, reviews, moderation, tracking (integratio
       );
     });
   });
+
+  // --- edge cases that exercise the remaining use-case branches ---
+  describe('edge cases', () => {
+    it('honours explicit started/finished dates on a shelf', async () => {
+      const admin = await makeAdmin('ed@example.com', 'Ed');
+      const { bookA } = await seedCatalogue(admin);
+      const reader = await makeMember('reader@example.com', 'Reader');
+      const res = await as(reader, {
+        method: 'PUT',
+        url: `${API}/me/books/${bookA.slug}/status`,
+        payload: { status: 'finished', startedOn: '2026-01-02', finishedOn: '2026-03-04' },
+      });
+      expect(json<{ startedOn: string; finishedOn: string }>(res)).toMatchObject({
+        status: 'finished',
+        startedOn: '2026-01-02',
+        finishedOn: '2026-03-04',
+      });
+    });
+
+    it('returns empty viewer state for an untouched book', async () => {
+      const admin = await makeAdmin('ed@example.com', 'Ed');
+      const { bookA } = await seedCatalogue(admin);
+      const reader = await makeMember('reader@example.com', 'Reader');
+      const viewer = json<{ status: null; startedOn: null; finishedOn: null; review: null }>(
+        await as(reader, { method: 'GET', url: `${API}/me/books/${bookA.slug}` }),
+      );
+      expect(viewer).toEqual({ status: null, startedOn: null, finishedOn: null, review: null });
+    });
+
+    it('treats a whitespace-only body as a bare rating', async () => {
+      const admin = await makeAdmin('ed@example.com', 'Ed');
+      const { bookA } = await seedCatalogue(admin);
+      const alice = await makeMember('alice@example.com', 'Alice');
+      const review = json<{ body: string | null }>(
+        await as(alice, {
+          method: 'PUT',
+          url: `${API}/me/books/${bookA.slug}/review`,
+          payload: { rating: 4, body: '   ' },
+        }),
+      );
+      expect(review.body).toBeNull();
+    });
+
+    it('404s deleting a review that does not exist', async () => {
+      const admin = await makeAdmin('ed@example.com', 'Ed');
+      const { bookA } = await seedCatalogue(admin);
+      const alice = await makeMember('alice@example.com', 'Alice');
+      expect(
+        (await as(alice, { method: 'DELETE', url: `${API}/me/books/${bookA.slug}/review` }))
+          .statusCode,
+      ).toBe(404);
+    });
+
+    it('reports list tracking state (false, then true)', async () => {
+      const admin = await makeAdmin('ed@example.com', 'Ed');
+      const { list } = await seedCatalogue(admin);
+      const reader = await makeMember('reader@example.com', 'Reader');
+      expect(
+        json<{ tracked: boolean }>(
+          await as(reader, { method: 'GET', url: `${API}/me/lists/${list.slug}/tracking` }),
+        ).tracked,
+      ).toBe(false);
+      await as(reader, { method: 'PUT', url: `${API}/me/lists/${list.slug}` });
+      expect(
+        json<{ tracked: boolean }>(
+          await as(reader, { method: 'GET', url: `${API}/me/lists/${list.slug}/tracking` }),
+        ).tracked,
+      ).toBe(true);
+    });
+
+    it('404s the tracking check for an unpublished list', async () => {
+      const admin = await makeAdmin('ed@example.com', 'Ed');
+      const subject = json<{ id: string }>(
+        await as(admin, { method: 'POST', url: `${API}/admin/subjects`, payload: { name: 'Sci' } }),
+      );
+      const list = json<{ slug: string }>(
+        await as(admin, {
+          method: 'POST',
+          url: `${API}/admin/lists`,
+          payload: { title: 'Draft', subjectId: subject.id },
+        }),
+      );
+      const reader = await makeMember('reader@example.com', 'Reader');
+      expect(
+        (await as(reader, { method: 'GET', url: `${API}/me/lists/${list.slug}/tracking` }))
+          .statusCode,
+      ).toBe(404);
+    });
+
+    it('404s member reads/writes that name an unknown book', async () => {
+      const reader = await makeMember('reader@example.com', 'Reader');
+      // public reviews for a missing book
+      expect(
+        (await as(null, { method: 'GET', url: `${API}/books/ghost-book/reviews` })).statusCode,
+      ).toBe(404);
+      // viewer state for a missing book
+      expect(
+        (await as(reader, { method: 'GET', url: `${API}/me/books/ghost-book` })).statusCode,
+      ).toBe(404);
+      // deleting a review on a missing book
+      expect(
+        (await as(reader, { method: 'DELETE', url: `${API}/me/books/ghost-book/review` }))
+          .statusCode,
+      ).toBe(404);
+    });
+
+    it('404s moderation actions on a missing review/report', async () => {
+      const admin = await makeAdmin('ed@example.com', 'Ed');
+      await seedCatalogue(admin);
+      const ghost = '00000000-0000-0000-0000-000000000000';
+      expect(
+        (
+          await as(admin, {
+            method: 'POST',
+            url: `${API}/admin/reviews/${ghost}/hide`,
+            payload: { reason: 'x' },
+          })
+        ).statusCode,
+      ).toBe(404);
+      expect(
+        (await as(admin, { method: 'POST', url: `${API}/admin/reviews/${ghost}/unhide` }))
+          .statusCode,
+      ).toBe(404);
+      expect(
+        (await as(admin, { method: 'POST', url: `${API}/admin/reports/${ghost}/resolve` }))
+          .statusCode,
+      ).toBe(404);
+    });
+  });
 });
