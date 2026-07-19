@@ -10,6 +10,38 @@ import {
   PageMeta,
   PublicLayout,
 } from './features/catalogue/components.js';
+import { useAuth } from './features/auth/AuthContext.js';
+import { fetchTrackedLists, memberKeys } from './features/member/api.js';
+import { TrackedListCard } from './features/member/components.js';
+
+/** Returning members see the lists they track (with progress) first (docs/01 F7). */
+function HomeTrackedLists() {
+  const { status, user } = useAuth();
+  const isAuthed = status === 'authenticated' && Boolean(user);
+  const { data } = useQuery({
+    queryKey: memberKeys.trackedLists,
+    queryFn: fetchTrackedLists,
+    enabled: isAuthed,
+  });
+
+  if (!isAuthed || !data || data.length === 0) return null;
+
+  return (
+    <section className="mb-12 rounded-lg border border-line bg-panel p-6">
+      <div className="flex items-baseline justify-between gap-4">
+        <h2 className="eyebrow">Lists you track</h2>
+        <Link className="font-sans text-sm text-accent hover:underline" to="/my-books">
+          My Books →
+        </Link>
+      </div>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        {data.map((list) => (
+          <TrackedListCard key={list.slug} list={list} />
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function SubjectSection({ subject }: { subject: SubjectDetail }) {
   return (
@@ -73,6 +105,8 @@ export function App() {
         }}
       />
       <Crumbs trail={[{ label: 'Home' }]} />
+
+      <HomeTrackedLists />
 
       <header className="max-w-2xl">
         <p className="eyebrow">Curated by subject</p>

@@ -55,26 +55,32 @@ Semantics settled in M2 (docs/05, [ADR-0009](adr/0009-refresh-reuse-grace-window
 |---|---|---|
 | GET `/subjects` | — | Ordered subjects with published-list summaries |
 | GET `/subjects/{slug}` | — | Subject + its published lists |
-| GET `/lists/{slug}` | — | List + ranked items (book **or series** summary + blurb) + its sublists; with a token, `viewer.tracked` + progress; 404 if unpublished (non-admin) |
+| GET `/lists/{slug}` | — | List + ranked items (book **or series** summary + blurb) + its sublists; 404 if unpublished (non-admin) |
 | GET `/books` | — | Paginated; `?search=` (trgm title/author), `?subject=` |
 | GET `/books/{slug}` | — | Full book: authors, subjects, series, list appearances, aggregates, `related` strip (same author / co-listed) |
 | GET `/series/{slug}` | — | Series + its books in `seriesPosition` order |
-| GET `/books/{slug}/reviews` | — | Paginated, newest first, hidden filtered; includes caller's own review flagged if hidden |
+| GET `/books/{slug}/reviews` | — | Visible reviews, newest first (hidden filtered); anonymous. The caller's own review (incl. a hidden one, flagged) comes from `GET /me/books/{slug}` |
+
+**Public responses stay member-agnostic (M4 decision).** The M2 sketch of this doc embedded a `viewer` block (shelf/rating/tracked) into `GET /books/{slug}` and `GET /lists/{slug}`. M4 instead keeps every public catalogue response identical for visitors and members, and serves member state from dedicated `/me/*` routes below. This keeps public pages anonymous and edge-cacheable (docs/03 §Redis `cache:page:`), and matches the rest of the API addressing member resources by the **same public slug** rather than an internal id. The SPA book/list pages fetch the public payload plus a small `/me/*` payload in parallel.
 
 `sitemap.xml` and `robots.txt` are served by the API at the root (Nginx-proxied) from published slugs.
 
 ### Member features
+All member resources are addressed by the same public **slug** as the catalogue (not an internal id). Shelving is `M`; writing a review is `MV` (verified email — docs/01 F2). Reporting is `M` (any member may flag; it isn't content creation).
+
 | Method & path | Auth | Purpose |
 |---|---|---|
-| GET `/me/shelf` | M | `?status=` filter; each item = book summary + status + dates |
-| PUT `/me/shelf/{bookId}` | M | Upsert `{status, startedOn?, finishedOn?}` |
-| DELETE `/me/shelf/{bookId}` | M | Remove from shelves |
-| GET `/me/tracked-lists` | M | Tracked lists + computed progress `{totalBooks, finished, reading}` per list |
-| PUT `/me/tracked-lists/{listId}` | M | Track a published list (idempotent) |
-| DELETE `/me/tracked-lists/{listId}` | M | Untrack |
-| PUT `/me/reviews/{bookId}` | MV | Upsert `{rating, body?}` — one per book; updates aggregates transactionally |
-| DELETE `/me/reviews/{bookId}` | MV | Delete own review; updates aggregates |
-| POST `/reviews/{reviewId}/reports` | MV | `{reason, note?}`; duplicate report → 409 |
+| GET `/me/books` | M | My Books grouped by shelf (`want_to_read`/`reading`/`finished`); each item = book summary + shelf dates. The finished shelf is the reading log |
+| GET `/me/books/{slug}` | M | The caller's shelf + own review (incl. `isHidden`/`hiddenReason`) for one book — drives the book page's member widgets |
+| PUT `/me/books/{slug}/status` | M | Upsert `{status, startedOn?, finishedOn?}`; `finishedOn` defaults to today when marked finished, and is cleared on other shelves. Returns the resulting shelf |
+| DELETE `/me/books/{slug}/status` | M | Remove from shelves (204) |
+| PUT `/me/books/{slug}/review` | MV | Upsert `{rating, body?}` — one per book; runs the language screen (F5); recomputes aggregates in the same transaction. Returns the caller's review |
+| DELETE `/me/books/{slug}/review` | M | Delete own review; recomputes aggregates (204) |
+| POST `/reviews/{reviewId}/report` | M | `{reason, note?}`; duplicate → 409, unknown review → 404 (204 on success) |
+| GET `/me/lists` | M | Tracked lists + computed progress `{total, finished, reading, pctFinished, pctReading}` per list |
+| GET `/me/lists/{slug}/tracking` | M | `{tracked}` — drives the list page's Track button |
+| PUT `/me/lists/{slug}` | M | Track a published list (idempotent) → `{tracked:true}`; 404 if not publicly visible |
+| DELETE `/me/lists/{slug}` | M | Untrack → `{tracked:false}` |
 
 ### Admin (all `A`; mounted under `/admin`)
 | Method & path | Purpose |
@@ -86,8 +92,10 @@ Semantics settled in M2 (docs/05, [ADR-0009](adr/0009-refresh-reuse-grace-window
 | POST/PATCH/DELETE `/admin/series[/{id}]` | Series CRUD; `PUT /admin/series/{id}/books` sets members + order |
 | POST/PATCH/DELETE `/admin/lists[/{id}]` | List CRUD; `{isPublished}` toggle; `{parentListId}` nests a sublist |
 | PUT `/admin/lists/{id}/items` | Replace full ranked item array `[{bookId \| seriesId, rank, blurb}]` — one transaction, deferred rank constraint |
-| GET `/admin/reports?resolved=false` | Moderation queue |
-| POST `/admin/reports/{id}/resolve` | `{action: "hide"|"dismiss", hiddenReason?}`; `dismiss` also **un-hides** a review the language screen auto-hid (false positive), so no valid review stays hidden after human review |
+| GET `/admin/reviews/reports` | Moderation queue — open reports (member + automated), oldest first, with review + book context |
+| POST `/admin/reviews/{reviewId}/hide` | `{reason}`; soft-hides the review (author sees the reason), resolves that review's open reports, recomputes the book aggregate |
+| POST `/admin/reviews/{reviewId}/unhide` | Reverse a hide (e.g. a false positive the language screen auto-hid) + recompute; no valid review stays hidden after human review |
+| POST `/admin/reports/{reportId}/resolve` | Dismiss a single report **without** hiding — the review stays visible |
 
 ### Meta
 | Method & path | Auth | Purpose |
@@ -113,12 +121,11 @@ Semantics settled in M2 (docs/05, [ADR-0009](adr/0009-refresh-reuse-grace-window
     { "slug": "dark-sun", "title": "Dark Sun", "coverUrl": "/covers/0198a1.jpg", "reason": "same-author" }
   ],
   "ratingAvg": 4.6,
-  "ratingCount": 128,
-  "viewer": { "shelfStatus": "finished", "myRating": 5 }
+  "ratingCount": 128
 }
 ```
 
-`viewer` is present only with a valid access token — the same endpoint serves visitors and members; no duplicate routes.
+This payload is identical for visitors and members (no `viewer` block) — the same endpoint serves everyone and stays edge-cacheable. A signed-in reader's shelf and review for this book come from `GET /me/books/{slug}` (see Member features), fetched in parallel by the SPA.
 
 ## Rate limits (Redis-backed, per [05 — Security](05-security.md))
 

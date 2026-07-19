@@ -40,4 +40,11 @@ npm run lint         # ESLint 9 (flat config)
 npm run build        # build shared → api → web
 ```
 
-**M1 (walking skeleton) is done and deployed**: the whole pipeline — Terraform → Ansible → CI/CD → Monit → HTTPS — is live, and `main` deploys itself to `bestbooks.guide` over an SSM tunnel with zero manual steps. The web page reports API health via the shared contract (`curl https://bestbooks.guide/healthz` → `{"status":"ok",...}`). Features arrive from **M2 (accounts & auth)** onward — see the [delivery plan](docs/08-delivery-plan.md).
+**Live and self-deploying**: the whole pipeline — Terraform → Ansible → CI/CD → Monit → HTTPS — runs itself, and `main` deploys to `bestbooks.guide` over an SSM tunnel with zero manual steps (`curl https://bestbooks.guide/healthz` → `{"status":"ok",...}`).
+
+**Progress** (see the [delivery plan](docs/08-delivery-plan.md)):
+
+- **M1 — walking skeleton** ✅ shipped
+- **M2 — accounts & auth** ✅ shipped — register → email verification → login → refresh rotation (reuse detection) → reset; Argon2id, rate limits, hardened headers
+- **M3 — catalogue & curation** ✅ shipped — curated subjects/lists/series/sublists with editor blurbs; admin CRUD + Open Library import; slug URLs, JSON-LD, sitemap
+- **M4 — member features** 🛠️ built & browser-verified — reading shelves + My Books, star ratings & reviews (with transactional, drift-proof aggregates), an automated language screen + moderation queue, and track-a-list with computed progress. F1–F7 of the MVP; deploy pending.

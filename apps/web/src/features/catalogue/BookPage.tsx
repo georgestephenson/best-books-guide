@@ -12,6 +12,7 @@ import {
   PublicLayout,
   Rating,
 } from './components.js';
+import { BookMemberPanel } from '../member/BookMemberPanel.js';
 
 /** A book page: metadata, series, list appearances, related strip (docs/04 GET /books/{slug}). */
 export function BookPage() {
@@ -169,6 +170,8 @@ export function BookPage() {
                   </p>
                 </section>
               ) : null}
+
+              <BookMemberPanel slug={data.slug} />
             </div>
           </div>
         </>

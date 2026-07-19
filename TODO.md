@@ -2,23 +2,31 @@
 
 Canonical task list — see [CLAUDE.md](CLAUDE.md) for how this file is used. Roadmap detail lives in [docs/08-delivery-plan.md](docs/08-delivery-plan.md).
 
-**M1 & M2 shipped** — `bestbooks.guide/healthz` live, self-deploying from `main`; accounts & auth deployed (M2). Now on **M3 — catalogue & curation**.
+**M1–M3 shipped** — `bestbooks.guide` live, self-deploying from `main`; accounts & auth (M2) and curated catalogue (M3) on prod. Now on **M4 — member features**.
 
-## Now (M3 — catalogue & curation)
+## Now (M4 — member features)
 
-**All 6 slices BUILT and CI-green** (public-browsing first, then admin tooling; public-domain seed only). Slices 1–4 merged to `main` (PR #24); slices 5–6 on branches awaiting review/merge. Full slicing in [docs/08 §M3](docs/08-delivery-plan.md).
+**BUILT and CI-green locally; verified end-to-end in a real browser (Playwright); not yet deployed.** On branch `claude/m4-member-features-4djeyg`. Full scope in [docs/08 §M4](docs/08-delivery-plan.md).
 
-- [x] **Slice 1 — Catalogue foundation**: Drizzle schema + hand-augmented migration 0001 (deferred rank, `num_nonnulls`, GIN trgm — ADR-0010); `promote-admin` CLI + runbook. *(merged)*
-- [x] **Slice 2 — Public read API**: shared contracts; `/api/v1` catalogue routes; `sitemap.xml`/`robots.txt` + nginx proxy. *(merged)*
-- [x] **Slice 3 — Public SPA**: home/subject/list/book/series; React 19 metadata + JSON-LD; "reading room" design. *(merged)*
-- [x] **Slice 4 — Public-domain seed** (`seed:catalogue`) — 3 subjects, series + sublists. **Exit criteria met locally.** *(merged)*
-- [x] **Slice 5 — Admin catalogue CRUD + Open Library import** (fixtures + verified live vs real OL) — `feat/m3-admin-catalogue`.
-- [x] **Slice 6 — Admin list & series builder** (items/blurbs/reorder/publish/sublist-nest; series membership) — `feat/m3-list-series-builder`.
+- [x] **Migration 0002** — `reading_statuses`, `reviews`, `review_reports`, `tracked_lists` (docs/03); CASCADE FKs, partial indexes (visible-review listing, open-report queue), `finished_on`-only-when-finished + rating 1–5 CHECKs. Drizzle-generated, no hand-augmentation needed.
+- [x] **F3 shelves** — `PUT/DELETE /me/books/{slug}/status`, grouped `GET /me/books`; `finished_on` defaults to today. Optimistic UI on the book page; My Books page.
+- [x] **F4/F5 ratings & reviews** — one per member per book (verified-email gate); `books.rating_avg/count` recomputed **in the same transaction under a per-book row lock** so aggregates can't drift under concurrent writes (test proves it).
+- [x] **F5 language screen** — `obscenity` matcher (leetspeak/Scunthorpe-aware): severe → auto-hide + system report; mild → publish + auto-report; clean → publish. Severe wordlist base64-encoded, not plaintext (public repo). Machines flag, humans decide.
+- [x] **F5/F6 moderation** — any member reports (dup → 409); admin queue (`GET /admin/reviews/reports`), hide (reason the author sees) / unhide / dismiss; author still sees their own hidden review flagged.
+- [x] **F7 track-a-list** — track/untrack from list pages; member home + My Books show tracked lists with **computed** progress (series expanded, sublists rolled up; nothing stored).
+- [x] Tests: 17 API integration + 6 language-screen unit + 11 web component; concurrency/no-drift test included. Playwright drove the full member happy-path (shelve → rate → review → track → progress → moderate) in Chromium — all green.
 
-**To finish shipping M3:**
-- [ ] Review/merge PRs for slices 5 (`feat/m3-admin-catalogue`) and 6 (`feat/m3-list-series-builder`)
-- [x] 2026-07-19 — Deploy `main`, run `seed:catalogue` on the host, `promote-admin` your account — real lists live on `https://bestbooks.guide` (3 subjects, 20 books, 5 lists)
-- [x] 2026-07-19 — Exit criteria confirmed **on prod**; Lighthouse (mobile) list + book pages: **perf 97, a11y 100** (was 81/93 — fixed by nginx gzip for JS/CSS + WCAG AA contrast/heading-order). Runbook `.env` bash-sourcing bug fixed en route (docs/07)
+**Design note (flagged):** member state moved out of the public `GET /books|lists/{slug}` responses (the M2 doc sketch embedded a `viewer` block) into dedicated slug-addressed `/me/*` routes — keeps public pages anonymous + edge-cacheable and consistent with slug addressing. docs/04 updated to match.
+
+**To finish shipping M4:**
+- [ ] Review/merge the M4 PR; deploy `main`; smoke the member journeys on `https://bestbooks.guide` (SES sandbox: verify from a verified inbox)
+- [ ] Confirm exit criteria **on prod** (F1–F7 flows; aggregate no-drift; Playwright member happy-path)
+- [ ] Seed the severe-terms list from a fuller maintained wordlist as content grows (currently a small curated seed)
+
+## Shipped earlier (M3 — catalogue & curation)
+
+- [x] Slices 1–6 (catalogue foundation, public read API, public SPA, public-domain seed, admin CRUD + OL import, list/series builder) — merged; real lists live on prod (3 subjects, 20 books, 5 lists).
+- [x] 2026-07-19 — Exit criteria confirmed **on prod**; Lighthouse (mobile) list + book pages: **perf 97, a11y 100** (nginx gzip + WCAG AA contrast/heading-order).
 - [ ] Note: list/series reorder ships as up/down controls (docs/01 F6 says "drag" — deferred; up/down meets the ranking need)
 
 ## Carry-over / follow-ups (from M1–M2)

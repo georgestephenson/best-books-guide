@@ -58,6 +58,9 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               <NavLink to="/admin/subjects" className={navClass}>
                 Subjects
               </NavLink>
+              <NavLink to="/admin/reviews" className={navClass}>
+                Moderation
+              </NavLink>
             </nav>
             <div className="ml-auto flex items-center gap-4 font-sans text-sm text-muted">
               <Link className="hover:text-accent" to="/">
