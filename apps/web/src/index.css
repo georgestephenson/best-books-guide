@@ -7,7 +7,7 @@
   --color-panel: #f8f8f4;
   --color-ink: #23261f;
   --color-muted: #5e6358;
-  --color-faint: #8a8f81;
+  --color-faint: #656d5b; /* AA-compliant on paper/panel/wash (≥4.5:1); was #8a8f81 (2.95:1) */
   --color-accent: #1f5140;
   --color-accent-soft: #2f6b55;
   --color-accent-wash: #e7ede9;

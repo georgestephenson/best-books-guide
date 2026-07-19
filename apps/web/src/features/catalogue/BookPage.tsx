@@ -131,7 +131,7 @@ export function BookPage() {
 
               {data.listAppearances.length > 0 ? (
                 <section className="mt-10 border-t border-line pt-6">
-                  <p className="eyebrow mb-4">Appears on</p>
+                  <h2 className="eyebrow mb-4">Appears on</h2>
                   <ul className="grid gap-3">
                     {data.listAppearances.map((a) => (
                       <li key={a.listSlug} className="flex items-baseline gap-3 font-sans">
@@ -149,14 +149,14 @@ export function BookPage() {
 
               {data.related.length > 0 ? (
                 <section className="mt-10 border-t border-line pt-6">
-                  <p className="eyebrow mb-4">Related books</p>
+                  <h2 className="eyebrow mb-4">Related books</h2>
                   <div className="grid grid-cols-2 gap-5 sm:grid-cols-3">
                     {data.related.map((r) => (
                       <Link key={r.slug} to={`/books/${r.slug}`} className="block">
                         <Cover title={r.title} coverUrl={r.coverUrl} />
-                        <h4 className="mt-2.5 font-serif text-base font-semibold leading-tight text-ink">
+                        <h3 className="mt-2.5 font-serif text-base font-semibold leading-tight text-ink">
                           {r.title}
-                        </h4>
+                        </h3>
                         <p className="mt-1 font-sans text-[0.68rem] uppercase tracking-wider text-faint">
                           {r.reason === 'same-author' ? 'Same author' : 'Co-listed'}
                         </p>

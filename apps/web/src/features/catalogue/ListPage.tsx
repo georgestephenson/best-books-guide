@@ -28,11 +28,11 @@ function Item({ item }: { item: ListItem }) {
         <Cover title={title} coverUrl={coverUrl} series={!isBook} />
       </Link>
       <div>
-        <h3 className="font-serif text-xl font-semibold leading-tight tracking-tight">
+        <h2 className="font-serif text-xl font-semibold leading-tight tracking-tight">
           <Link className="text-ink hover:text-accent" to={to}>
             {title}
           </Link>
-        </h3>
+        </h2>
         <p className="mt-1.5 font-sans text-sm text-muted">
           {isBook ? (
             <>
@@ -129,7 +129,7 @@ export function ListPage() {
 
           {data.sublists.length > 0 ? (
             <div className="mt-12 max-w-3xl border-t border-line pt-6">
-              <p className="eyebrow mb-4">Reading paths within this list</p>
+              <h2 className="eyebrow mb-4">Reading paths within this list</h2>
               <div className="grid gap-3 sm:grid-cols-2">
                 {data.sublists.map((sub) => (
                   <Link
@@ -137,7 +137,7 @@ export function ListPage() {
                     to={`/lists/${sub.slug}`}
                     className="rounded-lg border border-line bg-panel p-4 transition-colors hover:border-accent"
                   >
-                    <h4 className="font-serif text-lg font-semibold text-ink">{sub.title}</h4>
+                    <h3 className="font-serif text-lg font-semibold text-ink">{sub.title}</h3>
                     <p className="mt-1 font-sans text-sm text-muted">
                       {sub.itemCount} books
                       {sub.intro ? ` · ${sub.intro}` : ''}
