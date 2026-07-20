@@ -10,9 +10,9 @@ import { series } from './series.js';
  * plain `unique()` means "unique where not null" (Postgres NULLs are distinct).
  *
  * `rating_avg`/`rating_count` are denormalised aggregates recomputed in the same
- * transaction as any review write (docs/03 §aggregate maintenance) — they land in
- * M4; here they just carry their defaults. `series_id` is `SET NULL` so deleting a
- * series doesn't take its books with it.
+ * transaction as any review write (docs/03 §aggregate maintenance); here they just
+ * carry their defaults. `series_id` is `SET NULL` so deleting a series doesn't take
+ * its books with it.
  */
 export const books = pgTable(
   'books',

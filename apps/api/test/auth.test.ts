@@ -289,7 +289,7 @@ describe('auth lifecycle (integration)', () => {
     expect(anon.statusCode).toBe(401);
 
     // Registered but not verified → login works (M), but MV routes would 403.
-    // We assert the plumbing via /me requiring only M here; MV routes arrive in M4.
+    // We assert the plumbing via /me requiring only M here.
     await app.inject({ method: 'POST', url: `${API}/auth/register`, payload: REGISTER });
     const login = await app.inject({
       method: 'POST',

@@ -51,7 +51,7 @@ const ConfigSchema = Type.Object({
   EMAIL_FROM: Type.String({ default: 'Best Books Guide <no-reply@localhost>', minLength: 1 }),
   AWS_REGION: Type.String({ default: 'eu-west-2', minLength: 1 }),
 
-  // Catalogue admin (M3, docs/04 §Admin). Open Library is the import source; covers
+  // Catalogue admin (docs/04 §Admin). Open Library is the import source; covers
   // land on local disk under MEDIA_DIR, served at /covers/ by nginx (docs/02). Prod
   // sets MEDIA_DIR to {app_dir}/media via env.j2; the dev default is a repo-local dir.
   OPENLIBRARY_BASE_URL: Type.String({ default: 'https://openlibrary.org', minLength: 1 }),

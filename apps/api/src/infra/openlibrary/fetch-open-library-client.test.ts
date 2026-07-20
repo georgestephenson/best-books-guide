@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FetchOpenLibraryClient } from './fetch-open-library-client.js';
 
 // Recorded Open Library JSON (trimmed to the fields we read) — so these tests never
-// touch the network ([08] M3 slice 5).
+// touch the network.
 const fixtures: Record<string, unknown> = {
   '/search.json': {
     docs: [

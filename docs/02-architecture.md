@@ -134,7 +134,7 @@ SEO readiness in the SPA (cheap now, pays off later):
 
 - **Configuration**: 12-factor env vars, validated at boot with a TypeBox schema (fail fast, typo-proof). `.env` rendered by Ansible from Vault-encrypted values; `.env.example` kept current in-repo.
 - **Logging**: Pino JSON to stdout → journald (queryable, rotated by systemd). Request IDs on every log line; no PII in logs.
-- **Caching strategy**: Redis caches rendered public payloads (book page, list page) with short TTL (60s) + explicit invalidation on admin writes. Skip caching until M4 unless pages feel slow — correctness first.
+- **Caching strategy**: Redis caches rendered public payloads (book page, list page) with short TTL (60s) + explicit invalidation on admin writes. Defer it until pages actually feel slow — correctness first.
 - **Background work**: none in MVP beyond systemd timers (backups, cert renew). If job queues become necessary (e.g. bulk imports), BullMQ on the existing Redis — not before.
 - **Health**: `GET /healthz` (liveness + DB/Redis ping) used by Monit, deploy gates, and uptime checks.
 

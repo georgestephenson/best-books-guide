@@ -48,7 +48,7 @@ Auth column: `—` public · `M` member (valid access token) · `MV` member with
 | PATCH `/me` | M | Display name; email change is post-MVP |
 | PUT `/me/password` | M | Requires current password; revokes other sessions |
 
-Semantics settled in M2 (docs/05, [ADR-0009](adr/0009-refresh-reuse-grace-window.md)): **register** never auto-logs-in and is always 201-shaped (a duplicate emails the owner); **verify-email** returns `{verified:true}` and does not log in (the link often opens elsewhere); **login/refresh** return `{accessToken, expiresIn, user}` and set the refresh cookie, where `expiresIn` (900s) drives the SPA's silent-refresh timer; **refresh** returns **401** for a missing/expired session and **409** only for detected reuse; **logout** is **204** and idempotent; **reset-password** revokes all sessions, sets `email_verified_at` if unset (mailbox control just proven), and does not log in; **change-password** revokes every session and issues a fresh one, so the current device stays signed in while others are logged out.
+Auth semantics (docs/05, [ADR-0009](adr/0009-refresh-reuse-grace-window.md)): **register** never auto-logs-in and is always 201-shaped (a duplicate emails the owner); **verify-email** returns `{verified:true}` and does not log in (the link often opens elsewhere); **login/refresh** return `{accessToken, expiresIn, user}` and set the refresh cookie, where `expiresIn` (900s) drives the SPA's silent-refresh timer; **refresh** returns **401** for a missing/expired session and **409** only for detected reuse; **logout** is **204** and idempotent; **reset-password** revokes all sessions, sets `email_verified_at` if unset (mailbox control just proven), and does not log in; **change-password** revokes every session and issues a fresh one, so the current device stays signed in while others are logged out.
 
 ### Public catalogue
 | Method & path | Auth | Purpose |
@@ -61,7 +61,7 @@ Semantics settled in M2 (docs/05, [ADR-0009](adr/0009-refresh-reuse-grace-window
 | GET `/series/{slug}` | — | Series + its books in `seriesPosition` order |
 | GET `/books/{slug}/reviews` | — | Visible reviews, newest first (hidden filtered); anonymous. The caller's own review (incl. a hidden one, flagged) comes from `GET /me/books/{slug}` |
 
-**Public responses stay member-agnostic (M4 decision).** The M2 sketch of this doc embedded a `viewer` block (shelf/rating/tracked) into `GET /books/{slug}` and `GET /lists/{slug}`. M4 instead keeps every public catalogue response identical for visitors and members, and serves member state from dedicated `/me/*` routes below. This keeps public pages anonymous and edge-cacheable (docs/03 §Redis `cache:page:`), and matches the rest of the API addressing member resources by the **same public slug** rather than an internal id. The SPA book/list pages fetch the public payload plus a small `/me/*` payload in parallel.
+**Public responses stay member-agnostic.** Every public catalogue response is identical for visitors and members — no embedded `viewer` block. Member state is served from the dedicated `/me/*` routes below, addressed by the **same public slug**. This keeps public pages anonymous and edge-cacheable (docs/03 §Redis `cache:page:`); the SPA book/list pages fetch the public payload plus a small `/me/*` payload in parallel.
 
 `sitemap.xml` and `robots.txt` are served by the API at the root (Nginx-proxied) from published slugs.
 
@@ -125,7 +125,7 @@ All member resources are addressed by the same public **slug** as the catalogue 
 }
 ```
 
-This payload is identical for visitors and members (no `viewer` block) — the same endpoint serves everyone and stays edge-cacheable. A signed-in reader's shelf and review for this book come from `GET /me/books/{slug}` (see Member features), fetched in parallel by the SPA.
+A signed-in reader's shelf and review for this book come from `GET /me/books/{slug}` (see Member features), fetched in parallel by the SPA.
 
 ## Rate limits (Redis-backed, per [05 — Security](05-security.md))
 

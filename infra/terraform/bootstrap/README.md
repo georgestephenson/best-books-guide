@@ -6,7 +6,7 @@ the rest of the infra depends on but can't create for itself:
 - **`bestbooks-terraform-state`** — the S3 bucket every other config uses as its
   remote-state backend (versioned, encrypted, native `use_lockfile` locking — no DynamoDB).
 - **GitHub Actions OIDC provider + role** — so CI deploys with no long-lived AWS keys
-  ([docs/05](../../../docs/05-security.md)). M1 scope: upload release artifacts to S3 only.
+  ([docs/05](../../../docs/05-security.md)). Scoped to uploading release artifacts to S3 (deploy only).
 - **Monthly cost budget** — email alerts at 80% actual / 100% forecast ([docs/06](../../../docs/06-infrastructure.md)).
 
 ## Why local state

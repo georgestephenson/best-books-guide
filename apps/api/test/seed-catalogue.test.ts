@@ -17,7 +17,7 @@ async function get<T>(url: string): Promise<T> {
 }
 
 // The seed is shippable content, so it's tested end-to-end: apply it, then browse it
-// through the public API exactly as a visitor would (the M3 exit criteria).
+// through the public API exactly as a visitor would.
 describe('catalogue seed (integration)', () => {
   beforeEach(resetStores);
   afterAll(closeStores);
