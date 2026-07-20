@@ -1,19 +1,17 @@
 # Ansible
 
 Configures the EC2 host and ships releases. Runs from your machine (or CI) over
-SSH; nothing here runs on your laptop as a target.
+SSH tunnelled through SSM (no SSH ingress); nothing here runs on your laptop as a target.
 
 ## Layout
 
 ```
 site.yml  deploy.yml           # playbooks (kept next to roles/ so they resolve from any CWD)
-roles/  common nodejs app nginx monit
+roles/  common nodejs postgresql redis nginx app monit backup
 inventories/prod/hosts.yml     # the host (set ansible_host to the Elastic IP)
 group_vars/all/main.yml        # non-secret config
 group_vars/all/vault.yml       # secrets (encrypted; create from vault.yml.example)
 ```
-
-PostgreSQL, Redis, and backups arrive in M2 (the M1 app has no datastore yet).
 
 ## Prerequisites
 
@@ -25,8 +23,9 @@ ansible-vault encrypt group_vars/all/vault.yml
 ```
 
 Set `ansible_host` (the EIP) in the inventory and `admin_email` in
-`group_vars/all/main.yml`. The host must be reachable on 22 (your `admin_cidr`),
-and DNS for the domain must resolve to it before certbot can issue a cert.
+`group_vars/all/main.yml`. Host access is over SSM (no SSH ingress), so the control
+node needs AWS credentials and the `session-manager-plugin`. DNS for the domain must
+resolve to the host before certbot can issue a cert.
 
 ## Converge the host
 

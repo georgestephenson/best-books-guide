@@ -23,7 +23,7 @@ export function uuidv7Default(): SQL {
 
 /**
  * Shared column shapes for the catalogue tables (docs/03 §conventions), spelled out
- * once so the eight M3 tables don't each re-declare the same PK/timestamp boilerplate.
+ * once so the tables don't each re-declare the same PK/timestamp boilerplate.
  * `users` (migration 0000) predates these and stays inlined — no churn for churn's sake.
  */
 export const pkId = () => uuid('id').primaryKey().default(uuidv7Default());

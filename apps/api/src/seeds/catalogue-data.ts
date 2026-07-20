@@ -1,8 +1,8 @@
 /**
  * Catalogue seed dataset — **public-domain works only**, with demonstration blurbs.
  * This is shippable launch-adjacent content, not the editor's real curated picks
- * (those are entered via the admin UI in M3 slice 5+ and live in the DB, never in
- * source control). It exercises all three list shapes: a flat list, a list holding a
+ * (those are entered via the admin UI and live in the DB, never in source control).
+ * It exercises all three list shapes: a flat list, a list holding a
  * series, and a parent list with sublists.
  *
  * `applySeed` (./apply-seed) upserts this by slug, so re-running is idempotent.

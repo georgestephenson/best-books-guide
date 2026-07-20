@@ -114,7 +114,7 @@ export interface SitemapSlugs {
  * Read-side of the catalogue. Public pages only: list/sublist visibility is enforced
  * here (a list is public only when it *and* its parent are published — docs/03), so a
  * use-case that gets `null` returns 404 without needing to know the rule. Write access
- * (admin CRUD, imports) is a separate port, added in M3 slice 5.
+ * (admin CRUD, imports) is a separate port.
  */
 export interface CatalogueRepository {
   /** Ordered subjects that have at least one published top-level list. */

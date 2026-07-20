@@ -64,7 +64,7 @@ export async function apiJson<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
-/** The M1 health call, now routed through the shared client. */
+/** The health check, routed through the shared client. */
 export function fetchHealth(): Promise<HealthResponse> {
   return apiJson<HealthResponse>(HEALTH_PATH);
 }

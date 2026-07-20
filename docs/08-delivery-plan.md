@@ -14,12 +14,12 @@ Repo, licence, this design suite, ADRs 0001–0008, CLAUDE.md, TODO.md.
 
 The riskiest integrations, done while the app is trivial. App half first (verifiable locally), then the infra pipeline. **Live: `https://bestbooks.guide/healthz`.**
 
-- ✅ Monorepo scaffold (npm workspaces, TS strict, ESLint 9 + Prettier, Vitest **with coverage gates wired from the first commit**, commitlint + husky) — `apps/api` serving `/healthz` through the clean-arch layers, `apps/web` page calling it via the shared contract, `packages/shared` proving the type loop.
-- ✅ `ci.yml`: lint · format · typecheck / test + coverage gates / build / audit / PR-title commitlint. Dependabot (npm/actions/terraform) + branch protection on.
-- ✅ Terraform: bootstrap (state bucket, OIDC role, budget alarm) + `envs/prod` (VPC, EC2, EIP, buckets, SES identity; hosted zone looked up, not imported).
-- ✅ Ansible `site.yml` converges the host (common/nodejs/nginx/app/monit); `deploy.yml` ships releases. PostgreSQL/Redis/backup roles deferred to M2 (no datastore yet).
-- ✅ `deploy.yml` + `terraform.yml` workflows green.
-- ✅ Monit watches api/nginx/system + public HTTPS, alerts via SES SMTP; UptimeRobot external ping ([status page](https://stats.uptimerobot.com/1mUEBA341u)).
+- Monorepo scaffold (npm workspaces, TS strict, ESLint 9 + Prettier, Vitest **with coverage gates wired from the first commit**, commitlint + husky) — `apps/api` serving `/healthz` through the clean-arch layers, `apps/web` page calling it via the shared contract, `packages/shared` proving the type loop.
+- `ci.yml`: lint · format · typecheck / test + coverage gates / build / audit / PR-title commitlint. Dependabot (npm/actions/terraform) + branch protection on.
+- Terraform: bootstrap (state bucket, OIDC role, budget alarm) + `envs/prod` (VPC, EC2, EIP, buckets, SES identity; hosted zone looked up, not imported).
+- Ansible `site.yml` converges the host (common/nodejs/nginx/app/monit); `deploy.yml` ships releases. PostgreSQL/Redis/backup roles deferred to M2 (no datastore yet).
+- `deploy.yml` + `terraform.yml` workflows green.
+- Monit watches api/nginx/system + public HTTPS, alerts via SES SMTP; UptimeRobot external ping ([status page](https://stats.uptimerobot.com/1mUEBA341u)).
 
 **Exit criteria — all met:** push to `main` → live in <10 min zero-touch (✅ ~48s); rollback rehearsed (✅ both directions, one command); Monit alert (✅ kill → restart → email).
 
@@ -48,15 +48,15 @@ The riskiest integrations, done while the app is trivial. App half first (verifi
 
 ## M4 — Member features [M] *(BUILT + browser-verified locally; not yet deployed)*
 
-- ✅ Migration 0002: reading_statuses, reviews, review_reports, tracked_lists (docs/03); CASCADE FKs + partial indexes; drizzle-generated (no hand-augmentation this time).
-- ✅ Shelf upsert + My Books; ratings + reviews (verified-email gate); report → admin queue → hide/unhide/dismiss.
-- ✅ **Aggregate maintenance**: `books.rating_avg/count` recomputed over visible reviews in the *same transaction* as any insert/update/delete/hide, serialised by a per-book `SELECT … FOR UPDATE` so concurrent writers can't drift the count — proven by a concurrency test.
-- ✅ Track-a-list (F7): track/untrack from list pages; member home + My Books show tracked lists with **computed** progress (% read · % reading; series expanded, sublists rolled up; nothing stored).
-- ✅ Automated language screen on review submit (`obscenity`, leetspeak/Scunthorpe-aware): severe → auto-hide + system report; mild → publish + auto-report; clean → publish ([01](01-product.md) F5, [03](03-data-model.md) §review_reports). Severe wordlist is base64-encoded in source (public repo), decoded at load.
-- ✅ Optimistic/invalidating UI for shelf/rating/track via TanStack Query.
-- ✅ **API-shape decision**: member state lives on dedicated slug-addressed `/me/*` routes, not embedded as a `viewer` block in the public `GET /books|lists/{slug}` responses — public pages stay anonymous + edge-cacheable, and addressing stays slug-based. docs/04 updated to match the M2 sketch it supersedes.
+- Migration 0002: reading_statuses, reviews, review_reports, tracked_lists (docs/03); CASCADE FKs + partial indexes; drizzle-generated (no hand-augmentation this time).
+- Shelf upsert + My Books; ratings + reviews (verified-email gate); report → admin queue → hide/unhide/dismiss.
+- **Aggregate maintenance**: `books.rating_avg/count` recomputed over visible reviews in the *same transaction* as any insert/update/delete/hide, serialised by a per-book `SELECT … FOR UPDATE` so concurrent writers can't drift the count — proven by a concurrency test.
+- Track-a-list (F7): track/untrack from list pages; member home + My Books show tracked lists with **computed** progress (% read · % reading; series expanded, sublists rolled up; nothing stored).
+- Automated language screen on review submit (`obscenity`, leetspeak/Scunthorpe-aware): severe → auto-hide + system report; mild → publish + auto-report; clean → publish ([01](01-product.md) F5, [03](03-data-model.md) §review_reports). Severe wordlist is base64-encoded in source (public repo), decoded at load.
+- Optimistic/invalidating UI for shelf/rating/track via TanStack Query.
+- **API-shape decision**: member state lives on dedicated slug-addressed `/me/*` routes, not embedded as a `viewer` block in the public `GET /books|lists/{slug}` responses — public pages stay anonymous + edge-cacheable, and addressing stays slug-based. docs/04 updated to match the M2 sketch it supersedes.
 
-**Exit criteria**: MVP feature set F1–F7 complete on prod; aggregates never drift under concurrent review writes (test exists); Playwright journeys cover the member happy path end-to-end. *Status:* F1–F7 complete and green locally, no-drift test in place, and a Playwright run drove shelve → rate → review → track → progress → moderate in Chromium; **prod deploy + on-prod confirmation still pending.**
+**Exit criteria**: F1–F7 complete on prod; aggregates never drift under concurrent review writes (test exists); Playwright journeys cover the member happy path end-to-end. *Met locally (Playwright drove shelve → rate → review → track → progress → moderate in Chromium); prod deploy + on-prod confirmation pending.*
 
 ## M5 — Launch hardening [S] → 🚀
 

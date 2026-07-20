@@ -6,8 +6,8 @@ import { Type, type Static, type TSchema } from '@sinclair/typebox';
  * these schemas, so a field the API forgets to populate is a compile/validation
  * error, not a silent leak. All addressing is by slug (docs/04 §conventions).
  *
- * Member-only bits (`viewer`, shelf status, tracked/progress) arrive in M4; these
- * shapes are the anonymous view.
+ * These are the anonymous public shapes — no member state is embedded. A signed-in
+ * reader's shelf/rating/tracking come from the separate `/me/*` contracts (docs/04).
  */
 
 /** `T | null` — mirrors how PublicUser spells nullable fields (no ajv-formats). */
@@ -107,7 +107,7 @@ export const ListAppearance = Type.Object({
 });
 export type ListAppearance = Static<typeof ListAppearance>;
 
-/** Full book page (docs/04 worked example). `viewer` (shelf/rating) lands in M4. */
+/** Full book page (docs/04 worked example) — anonymous; member state comes from `/me/*`. */
 export const BookDetail = Type.Object({
   id: Type.String(),
   slug: Type.String(),

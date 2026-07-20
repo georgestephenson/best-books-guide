@@ -48,9 +48,9 @@ infra/ansible/
     ├── nginx        # vhost: SPA static + /api proxy + /covers, TLS (certbot), headers
     ├── app          # service user, /srv/bestbooks layout, systemd unit, .env from Vault
     ├── monit        # all checks + SES SMTP alerting (below)
-    ├── postgresql   # [M2] PG 18 via PGDG apt, tuned for 2GB host, pg_trgm/citext, app role
-    ├── redis        # [M2] Redis 8, localhost-only, maxmemory + LRU for cache keys
-    └── backup       # [M2] systemd timers + scripts (pg_dump→S3, media sync, heartbeats)
+    ├── postgresql   # PG 18 via PGDG apt, tuned for 2GB host, pg_trgm/citext, app role
+    ├── redis        # Redis 8, localhost-only, maxmemory + LRU for cache keys
+    └── backup       # systemd timers + scripts (pg_dump→S3, media sync, heartbeats)
 ```
 Playbooks sit next to `roles/` (not in a `playbooks/` subdir) so role resolution works from any working directory, not just via `ansible.cfg`.
 

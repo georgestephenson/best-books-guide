@@ -23,7 +23,7 @@ export interface OpenLibraryWork {
 /**
  * Read-only client for Open Library — the catalogue import source (docs/01 F6). Kept
  * behind a port so the network dependency is swappable and, crucially, so tests run
- * against recorded fixtures instead of the live API ([08] M3 slice 5).
+ * against recorded fixtures instead of the live API.
  */
 export interface OpenLibraryClient {
   search(query: string, limit: number): Promise<OpenLibraryDoc[]>;

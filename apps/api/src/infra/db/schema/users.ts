@@ -3,8 +3,8 @@ import { pgTable, uuid, text, timestamp, check } from 'drizzle-orm/pg-core';
 import { citext, uuidv7Default } from './columns.js';
 
 /**
- * users (docs/03 §users). The only table in migration 0001; the catalogue and
- * member-feature tables arrive in M3/M4.
+ * users (docs/03 §users). The only table in migration 0000; the catalogue and
+ * member-feature tables live in later migrations.
  *
  * No password_hash/email leak risk from the ORM: responses are serialised from
  * TypeBox response schemas (docs/04), never from a row spread.

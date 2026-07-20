@@ -2,7 +2,7 @@ import { Redis } from 'ioredis';
 
 /**
  * ioredis, chosen over node-redis for its first-class `eval` — the rate limiter
- * (M2) does an atomic INCR+EXPIRE in a Lua script, and ioredis makes that a plain
+ * does an atomic INCR+EXPIRE in a Lua script, and ioredis makes that a plain
  * method call. The db index rides in the URL (`redis://…/15` in tests).
  *
  * `maxRetriesPerRequest: 1` keeps the "Redis down → fail closed" path fast
