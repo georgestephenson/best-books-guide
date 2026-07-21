@@ -17,17 +17,23 @@ import { TrackedListCard } from './features/member/components.js';
 /**
  * An interactive full-width hero: books in the placeholder-cover palette (components.tsx)
  * drop onto the shelf on load, bounce, and settle upright; the cursor shoves nearby spines
- * aside and an angular spring stands them back up. Canvas-drawn and aria-hidden — purely
- * decorative, never in the accessibility tree. Honours prefers-reduced-motion by drawing a
- * single static, upright frame with no animation or pointer interaction.
+ * aside — lean a book past its balance point and it topples off the shelf and tumbles down
+ * the page. The canvas is a fixed, pointer-events-none overlay covering the whole viewport
+ * (an in-flow placeholder reserves the shelf's spot), so falling books stay visible until
+ * they clear the bottom of the screen instead of clipping at a strip edge. Aria-hidden and
+ * purely decorative; honours prefers-reduced-motion by drawing a single static, upright
+ * frame with no animation or pointer interaction.
  */
 function Bookshelf() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const frameRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const canvasEl = canvasRef.current;
-    if (!canvasEl) return;
-    const canvas: HTMLCanvasElement = canvasEl; // non-null declared type for the closures below
+    const frameEl = frameRef.current;
+    if (!canvasEl || !frameEl) return;
+    const canvas: HTMLCanvasElement = canvasEl; // non-null declared types for the closures below
+    const shelfFrame: HTMLDivElement = frameEl;
     let context: CanvasRenderingContext2D | null = null;
     try {
       context = canvas.getContext('2d');
@@ -65,64 +71,91 @@ function Bookshelf() {
     }
 
     type Book = {
+      // Layout / art
       homeX: number; // pivot: centre of the spine's base on the shelf
       w: number;
       h: number;
       color: string;
-      y: number; // current base y (falls from above to restY)
-      restY: number;
+      band: number; // title-band height fraction, or -1 for none
+      // 'stand' = hinged on the shelf; 'fall' = detached, tumbling down the page.
+      mode: 'stand' | 'fall';
+      tipAngle: number; // lean past which gravity tips it over instead of righting it
+      kick: 1 | -1; // impact-topple direction on landing
+      // Standing (drop-in + hinge) state
+      y: number; // base y (falls from above to the shelf, then pinned to it)
       vy: number;
       landed: boolean;
       release: number; // seconds before this book is released to fall (staggered)
-      angle: number; // lean from upright, radians
+      angle: number; // lean/rotation, radians
       angVel: number;
-      band: number; // title-band height fraction, or -1 for none
-      kick: 1 | -1; // impact-topple direction
+      // Free-fall state (once toppled off the shelf)
+      cx: number; // centre-of-mass position
+      cy: number;
+      fvx: number; // centre-of-mass velocity
+      fvy: number;
     };
 
     let books: Book[] = [];
-    let W = 0;
+    let W = 0; // viewport size — the canvas overlay covers the whole visible page
     let H = 0;
-    let shelfY = 0;
+    let ox = 0; // shelf strip's left edge / width / plank top, in viewport coords —
+    let shelfW = 0; // re-read from the in-flow placeholder every frame so scrolling
+    let shelfY = 0; // and layout shifts keep the shelf glued to its spot on the page
+    let shelfH = 0;
     let lastW = -1;
     const shelfThickness = 7;
 
     function resize() {
-      const rect = canvas.getBoundingClientRect();
-      W = Math.max(1, Math.round(rect.width));
-      H = Math.max(1, Math.round(rect.height));
+      W = Math.max(1, window.innerWidth);
+      H = Math.max(1, window.innerHeight);
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = Math.round(W * dpr);
       canvas.height = Math.round(H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      shelfY = H - shelfThickness - 2;
     }
 
-    // Fill the width with a row of varied spines (re-run when the width changes a lot).
+    function syncShelf() {
+      const rect = shelfFrame.getBoundingClientRect();
+      ox = rect.left;
+      shelfW = Math.max(1, Math.round(rect.width));
+      shelfH = Math.max(1, Math.round(rect.height));
+      shelfY = rect.bottom - shelfThickness - 2;
+      // Standing books ride the shelf as it moves (scroll / layout shifts).
+      for (const b of books) if (b.landed && b.mode === 'stand') b.y = shelfY;
+    }
+
+    // Fill the shelf strip with a row of varied spines (re-run when its width changes a lot).
     function buildBooks() {
       const rng = makeRng(0x9e3779b1);
-      const availH = shelfY - 8;
+      const availH = shelfH - shelfThickness - 10;
       const next: Book[] = [];
       let x = 4;
       let i = 0;
-      while (x < W - 6) {
+      while (x < shelfW - 6) {
         const w = 12 + Math.floor(rng() * 16); // 12..28
-        if (x + w > W - 4) break;
+        if (x + w > shelfW - 4) break;
         const h = Math.round(availH * (0.5 + rng() * 0.45));
         next.push({
           homeX: x + w / 2,
           w,
           h,
           color: spines[colorPattern[i % colorPattern.length]!] ?? spines[0]!,
-          y: reduce ? shelfY : -h - rng() * H * 1.4,
-          restY: shelfY,
+          band: rng() < 0.5 ? 0.35 + rng() * 0.35 : -1,
+          mode: 'stand',
+          // A thin, tall book tips from a smaller lean than a squat one (base/height),
+          // eased a little so a settling wobble never topples on its own.
+          tipAngle: Math.atan(w / 2 / h) * 2.1,
+          kick: rng() < 0.5 ? 1 : -1,
+          y: reduce ? shelfY : -h - rng() * H * 0.9,
           vy: 0,
           landed: reduce,
           release: reduce ? 0 : rng() * 0.85,
           angle: 0,
           angVel: 0,
-          band: rng() < 0.5 ? 0.35 + rng() * 0.35 : -1,
-          kick: rng() < 0.5 ? 1 : -1,
+          cx: 0,
+          cy: 0,
+          fvx: 0,
+          fvy: 0,
         });
         const gap = 1 + Math.floor(rng() * 3) + (rng() < 0.12 ? 6 : 0);
         x += w + gap;
@@ -131,20 +164,21 @@ function Bookshelf() {
       books = next;
     }
 
-    // Cursor state, in canvas-local pixels.
+    // Cursor state, in viewport pixels — tracked on window, since the overlay canvas is
+    // pointer-events-none (it must never block clicks on the page beneath it).
     let mx = -1e6;
     let my = -1e6;
     let mvx = 0; // per-event horizontal travel, decayed each frame
     let hovering = false;
+    let pBoost = 1; // fingers shove harder than the mouse — they only exist mid-swipe,
+    // so they never accumulate the sustained proximity push a hover does
 
     function onMove(e: PointerEvent) {
-      const rect = canvas.getBoundingClientRect();
-      const nx = e.clientX - rect.left;
-      const ny = e.clientY - rect.top;
-      mvx = hovering ? nx - mx : 0;
-      mx = nx;
-      my = ny;
+      mvx = hovering ? e.clientX - mx : 0;
+      mx = e.clientX;
+      my = e.clientY;
       hovering = true;
+      pBoost = e.pointerType === 'mouse' ? 1 : 2.6;
     }
     function onLeave() {
       hovering = false;
@@ -152,29 +186,67 @@ function Bookshelf() {
       my = -1e6;
       mvx = 0;
     }
+    function onDown(e: PointerEvent) {
+      // A new touch starts wherever it lands — never a teleport-delta from the last one.
+      mx = e.clientX;
+      my = e.clientY;
+      mvx = 0;
+      hovering = true;
+      pBoost = e.pointerType === 'mouse' ? 1 : 2.6;
+    }
+    function onUp(e: PointerEvent) {
+      // A lifted finger is gone; only a mouse keeps hovering between events.
+      if (e.pointerType !== 'mouse') onLeave();
+    }
 
     // Physics constants.
     const G = 2600; // gravity, px/s²
-    const REST = 0.36; // bounce restitution
-    const K = 150; // angular stiffness (righting spring)
-    const C = 7; // angular damping
-    const MAXA = 0.62; // max lean, radians (~35°)
-    const R = 105; // cursor influence radius, px
+    const REST = 0.34; // landing-bounce restitution
+    const K = 90; // hinge stiffness inside the stable base (righting spring)
+    const C = 6; // hinge damping
+    const TOPPLE = 34; // gravity torque once tipped past the base — pulls it over
+    const DETACH = 1.2; // lean (rad, ~69°) at which the book leaves the shelf and free-falls
+    const SHOVE = 46; // cursor push strength
+    const R = 108; // cursor influence radius, px
+
+    // Respawn variety — runtime only, so plain Math.random is fine here.
+    function resetToShelf(b: Book) {
+      b.mode = 'stand';
+      b.landed = false;
+      b.vy = 0;
+      b.y = -b.h - Math.random() * H * 0.6;
+      b.release = 0.15 + Math.random() * 0.6;
+      b.angle = 0;
+      b.angVel = 0;
+    }
 
     function step(dt: number) {
       mvx *= 0.55; // a still cursor stops shoving
       for (const b of books) {
+        if (b.mode === 'fall') {
+          // Free rigid body: gravity, drift, spin — until it clears the bottom edge.
+          b.fvy += G * dt;
+          b.cx += b.fvx * dt;
+          b.cy += b.fvy * dt;
+          b.fvx *= 0.999;
+          b.angle += b.angVel * dt;
+          // Gone once it clears the bottom of the viewport — the whole visible page.
+          if (b.cy - b.h > H + 24) resetToShelf(b);
+          continue;
+        }
+
+        // Drop-in with a bounce, then pin the base to the shelf.
         if (!b.landed) {
           if (b.release > 0) {
             b.release -= dt;
           } else {
             b.vy += G * dt;
             b.y += b.vy * dt;
-            if (b.y >= b.restY) {
-              b.y = b.restY;
+            if (b.y >= shelfY) {
+              b.y = shelfY;
               if (b.vy > 60) {
                 b.vy = -b.vy * REST; // bounce
-                b.angVel += b.kick * 0.6; // topple a touch on impact
+                b.angVel += b.kick * 0.35; // a touch of wobble on impact
               } else {
                 b.vy = 0;
                 b.landed = true;
@@ -183,32 +255,45 @@ function Bookshelf() {
           }
         }
 
-        // Angular spring back to upright…
-        let torque = -K * b.angle - C * b.angVel;
-        // …plus a shove away from the cursor, stronger up close and along its travel.
+        // Hinge dynamics: inside the base it rights itself; past the tip angle gravity
+        // takes over and topples it — an inverted pendulum losing its balance.
+        let torque: number;
+        if (Math.abs(b.angle) < b.tipAngle || !b.landed) {
+          torque = -K * b.angle - C * b.angVel;
+        } else {
+          torque = Math.sign(b.angle) * TOPPLE * Math.sin(b.angle) - 0.4 * b.angVel;
+        }
+
+        // Cursor shove: lean away, stronger up close and along the swipe direction.
         if (hovering) {
-          const dx = b.homeX - mx;
+          const dx = ox + b.homeX - mx;
           const adx = Math.abs(dx);
           if (adx < R) {
             const topY = b.y - Math.cos(b.angle) * b.h;
-            if (my > topY - 24 && my < b.y + 12) {
+            if (my > topY - 26 && my < b.y + 12) {
               const prox = 1 - adx / R;
               const dir = dx >= 0 ? 1 : -1;
-              torque += dir * 44 * prox * prox; // lean away from the cursor
-              torque += mvx * 1.4 * prox; // extra shove in the swipe direction
+              torque += dir * SHOVE * pBoost * prox * prox;
+              torque += mvx * 1.5 * pBoost * prox;
             }
           }
         }
 
         b.angVel += torque * dt;
-        b.angVel = Math.max(-14, Math.min(14, b.angVel));
+        b.angVel = Math.max(-16, Math.min(16, b.angVel));
         b.angle += b.angVel * dt;
-        if (b.angle > MAXA) {
-          b.angle = MAXA;
-          if (b.angVel > 0) b.angVel *= -0.3;
-        } else if (b.angle < -MAXA) {
-          b.angle = -MAXA;
-          if (b.angVel < 0) b.angVel *= -0.3;
+
+        // Past the point of no return: hand the base off to free-fall. Seed the fall
+        // with the centre-of-mass velocity from its rotation about the base pivot.
+        if (b.landed && Math.abs(b.angle) > DETACH) {
+          const s = Math.sin(b.angle);
+          const c = Math.cos(b.angle);
+          const L = b.h / 2;
+          b.cx = ox + b.homeX + s * L;
+          b.cy = shelfY - c * L;
+          b.fvx = b.angVel * c * L + Math.sign(b.angle) * 24;
+          b.fvy = b.angVel * s * L;
+          b.mode = 'fall';
         }
       }
     }
@@ -227,18 +312,22 @@ function Bookshelf() {
 
     function drawBook(b: Book) {
       ctx.save();
-      ctx.translate(b.homeX, b.y);
+      // Standing books pivot on their base (rect spans -h..0); falling books tumble
+      // about their centre (rect spans -h/2..h/2).
+      const top = b.mode === 'fall' ? -b.h / 2 : -b.h;
+      if (b.mode === 'fall') ctx.translate(b.cx, b.cy);
+      else ctx.translate(ox + b.homeX, b.y);
       ctx.rotate(b.angle);
       ctx.fillStyle = b.color;
-      roundRect(-b.w / 2, -b.h, b.w, b.h, 2);
+      roundRect(-b.w / 2, top, b.w, b.h, 2);
       ctx.fill();
       // Inset highlight near the left edge — the placeholder cover's detail.
       ctx.fillStyle = 'rgba(255,255,255,0.18)';
-      ctx.fillRect(-b.w / 2 + 2.5, -b.h + 4, 1.5, b.h - 8);
+      ctx.fillRect(-b.w / 2 + 2.5, top + 4, 1.5, b.h - 8);
       if (b.band > 0) {
         ctx.fillStyle = 'rgba(255,255,255,0.2)';
         const bw = Math.max(4, b.w - 8);
-        roundRect(-bw / 2, -b.h * b.band, bw, 6, 1);
+        roundRect(-bw / 2, top + b.h * (1 - b.band), bw, 6, 1);
         ctx.fill();
       }
       ctx.restore();
@@ -246,42 +335,59 @@ function Bookshelf() {
 
     function render() {
       ctx.clearRect(0, 0, W, H);
-      // Shelf plank across the full width, with a soft shadow line beneath.
+      // Shelf plank across the strip, with a soft shadow line beneath.
       ctx.fillStyle = shelfColor;
-      roundRect(0, shelfY, W, shelfThickness, 2);
+      roundRect(ox, shelfY, shelfW, shelfThickness, 2);
       ctx.fill();
       ctx.globalAlpha = 0.12;
       ctx.fillStyle = inkColor;
-      ctx.fillRect(0, shelfY + shelfThickness, W, 2);
+      ctx.fillRect(ox, shelfY + shelfThickness, shelfW, 2);
       ctx.globalAlpha = 1;
       for (const b of books) drawBook(b);
     }
 
     resize();
+    syncShelf();
     buildBooks();
-    lastW = W;
+    lastW = shelfW;
+
+    window.addEventListener('resize', resize);
 
     let ro: ResizeObserver | null = null;
     if (typeof ResizeObserver !== 'undefined') {
       ro = new ResizeObserver(() => {
-        resize();
+        syncShelf();
         // Re-lay the row only on a real width change; otherwise just keep it crisp.
-        if (Math.abs(W - lastW) > 24) {
-          lastW = W;
+        if (Math.abs(shelfW - lastW) > 24) {
+          lastW = shelfW;
           buildBooks();
         }
         if (reduce) render();
       });
-      ro.observe(canvas);
+      ro.observe(shelfFrame);
     }
 
     if (reduce) {
-      render();
-      return () => ro?.disconnect();
+      // No animation loop: draw once, and redraw on scroll/resize so the static shelf
+      // stays glued to its spot on the page under the fixed overlay.
+      const redraw = () => {
+        syncShelf();
+        render();
+      };
+      redraw();
+      window.addEventListener('scroll', redraw, { passive: true });
+      return () => {
+        window.removeEventListener('scroll', redraw);
+        window.removeEventListener('resize', resize);
+        ro?.disconnect();
+      };
     }
 
-    canvas.addEventListener('pointermove', onMove);
-    canvas.addEventListener('pointerleave', onLeave);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerdown', onDown);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    document.documentElement.addEventListener('pointerleave', onLeave);
 
     let raf = 0;
     let last = 0;
@@ -290,6 +396,7 @@ function Bookshelf() {
       let dt = (t - last) / 1000;
       last = t;
       if (dt > 0.05) dt = 0.05; // clamp long stalls (tab switches)
+      syncShelf(); // track scroll / layout shifts before physics
       step(dt / 2); // two sub-steps keep the spring stable
       step(dt / 2);
       render();
@@ -300,18 +407,31 @@ function Bookshelf() {
     return () => {
       cancelAnimationFrame(raf);
       ro?.disconnect();
-      canvas.removeEventListener('pointermove', onMove);
-      canvas.removeEventListener('pointerleave', onLeave);
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      document.documentElement.removeEventListener('pointerleave', onLeave);
     };
   }, []);
 
+  // The in-flow div reserves the shelf's spot in the layout; the canvas is a fixed
+  // overlay across the whole viewport so toppled books stay visible all the way down
+  // the page. pointer-events-none keeps every link and button beneath it clickable.
+  // touch-action: none on the strip lets a swipe over the shelf drive the books rather
+  // than being claimed for scrolling (the rest of the page scrolls as normal).
   return (
-    <div className="mb-10 w-full" aria-hidden="true">
+    <div
+      ref={frameRef}
+      className="mb-6 h-40 w-full sm:h-44"
+      style={{ touchAction: 'none' }}
+      aria-hidden="true"
+    >
       <canvas
         ref={canvasRef}
         data-testid="bookshelf"
-        className="block h-24 w-full sm:h-32"
-        style={{ touchAction: 'none' }}
+        className="pointer-events-none fixed inset-0 z-10 h-full w-full"
       />
     </div>
   );
