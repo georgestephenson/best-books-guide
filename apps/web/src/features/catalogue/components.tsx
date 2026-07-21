@@ -75,7 +75,7 @@ export function Chip({ children }: { children: ReactNode }) {
 /** Breadcrumb trail. Items render as links; the last (current page) is plain text. */
 export function Crumbs({ trail }: { trail: { label: string; to?: string }[] }) {
   return (
-    <nav className="mb-8 font-sans text-sm text-muted" aria-label="Breadcrumb">
+    <nav className="mb-6 hidden font-sans text-sm text-muted sm:block" aria-label="Breadcrumb">
       {trail.map((c, i) => (
         <span key={i}>
           {i > 0 ? <span className="px-1.5 text-faint">/</span> : null}
