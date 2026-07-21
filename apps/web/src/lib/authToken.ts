@@ -36,7 +36,7 @@ export function hasSessionHint(): boolean {
   }
 }
 
-function setSessionHint(exists: boolean): void {
+export function setSessionHint(exists: boolean): void {
   try {
     if (exists) localStorage.setItem(SESSION_HINT_KEY, '1');
     else localStorage.removeItem(SESSION_HINT_KEY);
