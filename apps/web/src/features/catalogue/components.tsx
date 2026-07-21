@@ -216,7 +216,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
       <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">{children}</main>
       <footer className="border-t border-line">
         <div className="mx-auto max-w-4xl px-6 py-6 font-sans text-xs text-faint">
-          Best Books Guide — curated, opinionated, reader-supported. No ads, ever.
+          Best Books Guide — curated, opinionated, reader-supported.
         </div>
       </footer>
     </div>

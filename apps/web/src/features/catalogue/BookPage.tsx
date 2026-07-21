@@ -164,10 +164,6 @@ export function BookPage() {
                       </Link>
                     ))}
                   </div>
-                  <p className="mt-4 font-sans text-sm text-faint">
-                    Related titles stay inside the curated catalogue — same author and co-listed
-                    books, never “readers also bought.”
-                  </p>
                 </section>
               ) : null}
 
