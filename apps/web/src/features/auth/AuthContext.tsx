@@ -1,7 +1,7 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { AuthResponse, LoginBody, PublicUser } from '@bestbooks/shared';
-import { setAccessToken } from '../../lib/authToken.js';
+import { hasSessionHint, setAccessToken } from '../../lib/authToken.js';
 import { refreshSession } from '../../lib/refresh.js';
 import { loginRequest, logoutRequest, meRequest } from './api.js';
 
@@ -35,6 +35,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // No prior session on this device → skip the boot refresh (and its 401). The
+    // hint is only a fast-path; a real session is still proven by the refresh below.
+    if (!hasSessionHint()) {
+      setStatus('anonymous');
+      return;
+    }
     let cancelled = false;
     void (async () => {
       const session = await refreshSession();
