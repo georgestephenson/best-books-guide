@@ -49,4 +49,5 @@ npm run build        # build shared → api → web
 | M1 — walking skeleton | ✅ shipped |
 | M2 — accounts & auth | ✅ shipped |
 | M3 — catalogue & curation | ✅ shipped |
-| M4 — member features | 🛠️ built & browser-verified; deploy pending |
+| M4 — member features | ✅ shipped |
+| M5 — launch hardening | 🛠️ in progress |

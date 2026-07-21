@@ -1,6 +1,6 @@
 # Best Books Guide — Design Documentation
 
-_Last updated: 2026-07-12_
+_Last updated: 2026-07-21_
 
 This is the design doc suite for **Best Books Guide**, a curated, opinionated catalogue of the best books by subject, where members track their reading, rate, and review.
 

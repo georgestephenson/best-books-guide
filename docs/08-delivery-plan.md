@@ -1,6 +1,6 @@
 # 08 — Delivery plan
 
-_Last updated: 2026-07-15 · Status: Accepted_
+_Last updated: 2026-07-21 · Status: Accepted_
 
 Strategy: **walking skeleton first** — the entire pipeline (Terraform → Ansible → CI/CD → Monit → HTTPS hello-world) ships before any feature. After that, every milestone is a vertical slice deployed to production the day it's done. Sizes are relative (S < M < L), not dates — this ships at the pace of available evenings.
 
@@ -46,7 +46,7 @@ The riskiest integrations, done while the app is trivial. App half first (verifi
 
 **Exit criteria**: a visitor can browse real curated lists on prod; a series renders as one ranked list item with its own page; Lighthouse ≥ 90 perf/a11y on list + book pages.
 
-## M4 — Member features [M] *(BUILT + browser-verified locally; not yet deployed)*
+## M4 — Member features [M] ✅ (2026-07-19)
 
 - Migration 0002: reading_statuses, reviews, review_reports, tracked_lists (docs/03); CASCADE FKs + partial indexes; drizzle-generated (no hand-augmentation this time).
 - Shelf upsert + My Books; ratings + reviews (verified-email gate); report → admin queue → hide/unhide/dismiss.
@@ -56,9 +56,9 @@ The riskiest integrations, done while the app is trivial. App half first (verifi
 - Optimistic/invalidating UI for shelf/rating/track via TanStack Query.
 - **API-shape decision**: member state lives on dedicated slug-addressed `/me/*` routes, not embedded as a `viewer` block in the public `GET /books|lists/{slug}` responses — public pages stay anonymous + edge-cacheable, and addressing stays slug-based. docs/04 updated to match the M2 sketch it supersedes.
 
-**Exit criteria**: F1–F7 complete on prod; aggregates never drift under concurrent review writes (test exists); Playwright journeys cover the member happy path end-to-end. *Met locally (Playwright drove shelve → rate → review → track → progress → moderate in Chromium); prod deploy + on-prod confirmation pending.*
+**Exit criteria — all met:** F1–F7 complete on prod; aggregates never drift under concurrent review writes (concurrency test proves it); Playwright journeys cover the member happy path end-to-end (shelve → rate → review → track → progress → moderate in Chromium).
 
-## M5 — Launch hardening [S] → 🚀
+## M5 — Launch hardening [S] → 🚀 *(current)*
 
 - SES production access confirmed; DMARC tightened after clean sending.
 - Security pass: headers verified (Mozilla Observatory A), dependency audit clean, gitleaks clean, SG/ufw reviewed.

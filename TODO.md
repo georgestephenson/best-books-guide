@@ -2,27 +2,18 @@
 
 Canonical task list — see [CLAUDE.md](CLAUDE.md) for how this file is used. Roadmap detail lives in [docs/08-delivery-plan.md](docs/08-delivery-plan.md).
 
-**Status:** M1–M3 shipped — `bestbooks.guide` live, self-deploying from `main`. Now on **M4 — member features**: built, CI-green, and browser-verified locally on `claude/m4-member-features-4djeyg`; deploy pending.
+**Status:** M1–M4 shipped — `bestbooks.guide` live, self-deploying from `main`. Now on **M5 — launch hardening**.
 
-## Now — M4 member features (deploy pending)
+## Now — M5 launch hardening
 
-Built and verified end-to-end in Playwright (Chromium); not yet on prod. Full scope in [docs/08 §M4](docs/08-delivery-plan.md).
+Final pass before public announce. Full scope in [docs/08 §M5](docs/08-delivery-plan.md).
 
-- [x] Migration 0002 — `reading_statuses`, `reviews`, `review_reports`, `tracked_lists` (docs/03)
-- [x] F3 shelves — shelf upsert + grouped My Books; `finished_on` defaults to today
-- [x] F4/F5 ratings & reviews — one per member per book (verified-email gate); `books.rating_avg/count` recomputed in the same transaction under a per-book row lock, so aggregates can't drift under concurrent writes (concurrency test proves it)
-- [x] F5 language screen — `obscenity` matcher (leetspeak/Scunthorpe-aware): severe → auto-hide + system report, mild → publish + auto-report, clean → publish; severe wordlist base64-encoded, not plaintext (public repo)
-- [x] F5/F6 moderation — member/auto reports → admin queue → hide/unhide/dismiss; author still sees their own hidden review, flagged
-- [x] F7 track-a-list — track/untrack from list pages; member home + My Books show computed progress (series expanded, sublists rolled up; nothing stored)
-- [x] Tests — 17 API integration + 6 language-screen unit + 11 web component; concurrency/no-drift test included
-- [x] UI polish (2026-07-19) — mobile nav de-cluttered; username is a disclosure menu (Admin + Sign out); homepage/subject summaries roll up sublist items
-
-**Design note:** member state lives on dedicated slug-addressed `/me/*` routes, not a `viewer` block in the public `GET /books|lists/{slug}` responses — keeps public pages anonymous + edge-cacheable. docs/04 updated to match.
-
-**To ship:**
-
-- [ ] Review/merge the M4 PR; deploy `main`; smoke the member journeys on `https://bestbooks.guide` (SES sandbox: verify from a verified inbox)
-- [ ] Confirm exit criteria **on prod** (F1–F7 flows; aggregate no-drift; Playwright member happy-path)
+- [ ] Land **SES production access** (submit the request tracked in carry-overs below, then confirm — blocks emailing arbitrary addresses); tighten DMARC to `p=quarantine` after a clean sending month
+- [ ] Security pass: headers to Mozilla Observatory **A**, dependency audit clean, gitleaks clean, SG/ufw reviewed
+- [ ] Restore drill (DB from S3 to scratch); host-rebuild drill against RTO; load sanity (`autocannon` on hot pages; p95 < 300 ms at modest concurrency)
+- [ ] Content to launch bar (10+ subjects, ~100 books, blurbs written)
+- [ ] 404/500 pages, favicon/OG images, privacy page (what's stored; deletion by email request until self-serve ships)
+- [ ] Quiet **Support** page with a donate link (platform decision in "Later" below; no ads, ever)
 - [ ] Seed the severe-terms list from a fuller maintained wordlist as content grows (currently a small curated seed)
 
 ## Follow-ups & carry-overs
@@ -45,6 +36,7 @@ Built and verified end-to-end in Playwright (Chromium); not yet on prod. Full sc
 
 ## Shipped
 
+- [x] 2026-07-19 — **M4 member features** — merged (#27 + follow-ups) and deployed to prod; `bestbooks.guide` serving member journeys. Migration 0002 (`reading_statuses`, `reviews`, `review_reports`, `tracked_lists`); F3 shelves (upsert + grouped My Books); F4/F5 ratings & reviews (verified-email gate, one per member per book) with `books.rating_avg/count` recomputed in the same transaction under a per-book row lock (concurrency/no-drift test); F5 language screen (`obscenity`, leetspeak/Scunthorpe-aware; severe wordlist base64-encoded); F5/F6 moderation (member/auto reports → admin queue → hide/unhide/dismiss); F7 track-a-list with computed progress (series expanded, sublists rolled up, nothing stored). Member state on dedicated slug-addressed `/me/*` routes (public pages stay anonymous + edge-cacheable). 17 API integration + 6 language-screen unit + 11 web component tests; Playwright member happy-path (Chromium). Exit criteria confirmed on prod
 - [x] 2026-07-19 — **M3 catalogue & curation** — slices 1–6 merged; real lists on prod (3 subjects, 20 books, 5 lists); exit criteria confirmed on prod, Lighthouse (mobile) perf 97 / a11y 100
 - [x] 2026-07-18 — **M2 accounts & auth** — full auth lifecycle on prod (register → verify → login → refresh w/ reuse detection + 10s grace window → logout → reset), `/me`, rate limits (429 + Retry-After), Argon2id, helmet CSP + nginx hardening; host converged (postgresql/redis/backup roles), migration 0001, CI PG18/Redis8 service containers; SPA auth. ADR-0009; docs/03/04/05/07 amended; 114 tests, ~94% coverage
 - [x] 2026-07-15 — **M1 walking skeleton** — live, self-deploys from `main` in ~48s. Terraform + Ansible + CI/deploy/terraform workflows + Dependabot; Monit watchdog + SES alerts; rollback rehearsed both directions; UptimeRobot ping. ~11 bugs shaken out by live drills ([docs/08](docs/08-delivery-plan.md))
