@@ -8,7 +8,11 @@ Canonical task list — see [CLAUDE.md](CLAUDE.md) for how this file is used. Ro
 
 Final pass before public announce. Full scope in [docs/08 §M5](docs/08-delivery-plan.md).
 
-- [ ] Land **SES production access** (submit the request tracked in carry-overs below, then confirm — blocks emailing arbitrary addresses); tighten DMARC to `p=quarantine` after a clean sending month
+- [ ] **In review** — email-send resilience + auth-UI flag (`fix/email-send-resilience-and-auth-ui-flag`). A failed transactional send no longer 500s the request that triggered it ([ADR-0011](docs/adr/0011-best-effort-transactional-email.md)): SES sandbox rejections were breaking **live signup on prod** — the account row committed, then a 500, and the retry wedged on the existing-account path, which failed the same way from inside its own `catch`. Ships `VITE_AUTH_UI=false` in the prod build too, hiding the account entry points from anonymous visitors while the auth routes stay reachable by URL
+
+- [ ] Land **SES production access** — **denied, appeal open** (case `178466565800037`). Timeline: submitted 2026-07-21 21:27:39, auto-denied 2 seconds later with a boilerplate request for more detail; a use-case reply went in 2026-07-22 but never included the **sample email content** AWS asked for, and two content-free chasers (07-23, 07-24) re-queued it. Next: one complete reply covering all four of their questions (frequency, list maintenance, bounces/complaints/unsubscribes, **sample content** — all three templates incl. the existing-account notice), then leave it alone ≥3 business days. If nothing by ~2026-07-31, resolve the case and submit a fresh request with the full use-case text up front. Watch `aws sesv2 get-account --region eu-west-2` → `ProductionAccessEnabled` (not `ReviewDetails.Status`, which is a stale record of the 07-21 auto-deny). Case mail goes to the **root account address**, not `gf.s@hotmail.com`
+- [ ] When production access lands: remove the `VITE_AUTH_UI` flag (delete `apps/web/src/lib/featureFlags.ts`, its three call sites, and the env in `.github/workflows/deploy.yml`), then tighten DMARC to `p=quarantine` after a clean sending month
+- [ ] **Alert on email delivery failures** — [ADR-0011](docs/adr/0011-best-effort-transactional-email.md) makes a failed send silent to the user and loud only in the logs; nothing watches for a spike. Should land before the site takes real signup traffic
 - [ ] Security pass: headers to Mozilla Observatory **A**, dependency audit clean, gitleaks clean, SG/ufw reviewed
 - [ ] Restore drill (DB from S3 to scratch); host-rebuild drill against RTO; load sanity (`autocannon` on hot pages; p95 < 300 ms at modest concurrency)
 - [ ] Content to launch bar (10+ subjects, ~100 books, blurbs written)
@@ -18,7 +22,7 @@ Final pass before public announce. Full scope in [docs/08 §M5](docs/08-delivery
 
 ## Follow-ups & carry-overs
 
-- [ ] Submit the **SES production-access** request (lead time ~24h+; blocks M5) — until then, mail only reaches verified identities
+- [ ] Consider a second email transport behind `EMAIL_TRANSPORT` (Resend/Postmark/Brevo — the `EmailSender` port makes it ~one file + DKIM/SPF records) **only if** the SES appeal is still unresolved past ~2 weeks. New external dependency ⇒ needs an ADR first
 - [ ] Enable **CodeQL** (add `codeql.yml`) — from the M1 repo-settings checklist
 - [ ] Import the full SecLists top-10k into `apps/api/src/infra/security/breached-passwords.data.ts` (currently a curated seed)
 - [ ] List/series reorder ships as up/down controls (docs/01 F6 says "drag" — deferred; up/down meets the ranking need)

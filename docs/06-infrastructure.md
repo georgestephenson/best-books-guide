@@ -88,7 +88,8 @@ Covers are **served from local disk by Nginx** (simplest correct thing on one ho
 ## SES (eu-west-2)
 
 - Domain identity + **Easy DKIM** (2048-bit, 3 CNAMEs via Terraform), custom MAIL FROM `mail.bestbooks.guide` (SPF), DMARC `p=none` → `p=quarantine` after a clean month.
-- **Sandbox exit** (production access request, ~24h turnaround) needed before emailing arbitrary addresses — do it during M2 while testing against own inboxes ([TODO](../TODO.md)).
+- **Sandbox exit** (production access request) needed before emailing arbitrary addresses. **Still in the sandbox**: requested 2026-07-21, auto-denied two seconds later with a request for more detail (case `178466565800037`, still open — appeal in progress, [TODO](../TODO.md)). Until it lands, SES rejects any recipient that is not a verified identity, so mail reaches only the `bestbooks.guide` domain and individually verified addresses.
+- A rejected send **never fails the request that triggered it** ([ADR-0011](adr/0011-best-effort-transactional-email.md)) — it is logged, and signup/reset still succeed. While the sandbox holds, the web build also hides the account entry points from anonymous visitors (`VITE_AUTH_UI=false`, set in `deploy.yml`); the auth routes stay live for the editor.
 - App sends via SDK v3 + instance role (no SMTP creds). Monit alerts via SES **SMTP** (single-purpose IAM user, `ses:SendRawEmail` only — the one static credential in the system, Vault-stored).
 - Configuration set with CloudWatch-free event handling deferred; MVP relies on SES feedback forwarding for bounces (volume: transactional only).
 

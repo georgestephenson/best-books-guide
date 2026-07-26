@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { ApiError } from '../../lib/api.js';
+import { authUiEnabled } from '../../lib/featureFlags.js';
 import { useAuth } from '../auth/AuthContext.js';
 
 /**
@@ -197,11 +198,11 @@ function SiteHeader() {
                 onSignOut={() => void logout()}
               />
             </>
-          ) : (
+          ) : authUiEnabled() ? (
             <Link className="text-accent hover:underline" to="/login">
               Sign in
             </Link>
-          )}
+          ) : null}
         </nav>
       </div>
     </header>

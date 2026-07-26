@@ -60,7 +60,7 @@ The riskiest integrations, done while the app is trivial. App half first (verifi
 
 ## M5 — Launch hardening [S] → 🚀 *(current)*
 
-- SES production access confirmed; DMARC tightened after clean sending.
+- SES production access confirmed (**blocked** — denied 2026-07-21, appeal open; see §Risks and [06](06-infrastructure.md) §SES); DMARC tightened after clean sending. Accounts stay hidden behind `VITE_AUTH_UI` until it lands — the read-only catalogue can launch without it.
 - Security pass: headers verified (Mozilla Observatory A), dependency audit clean, gitleaks clean, SG/ufw reviewed.
 - Restore drill (DB from S3 to scratch), host-rebuild drill against RTO, load sanity (`autocannon` on hot pages; p95 < 300 ms at modest concurrency).
 - Content to launch bar (10+ subjects, ~100 books, blurbs written).
@@ -89,7 +89,7 @@ The riskiest integrations, done while the app is trivial. App half first (verifi
 
 | Risk | Mitigation |
 |---|---|
-| SES production-access delay blocks launch | Request in M2, weeks early; sandbox covers all dev/testing |
+| SES production-access delay blocks launch | **Mitigation failed** — the request slipped from M2 to 2026-07-21 and was auto-denied; still unresolved in M5, the one risk on this list that landed. Two lessons banked: a lead-time task with no deadline is not mitigated by intending to do it early, and the sandbox hid a production bug rather than covering for it ([ADR-0011](adr/0011-best-effort-transactional-email.md)). Launch is decoupled instead — the read-only catalogue needs no email, accounts are flagged off until access lands |
 | Solo-dev blind spots | CI gates + CodeQL + self-review ritual + ADR discipline; docs enable a second brain to onboard fast |
 | Engagement features drifting into noise | The opt-in + quiet + "done well" bar in [01](01-product.md) §Principles; tracking-based mechanics stay philosophy-gated (principles rewrite + ADR required); backlog stays pull-only |
 | MVP scope growth | Series, sublists, and related books landed in M3 (2026-07-11 review) and it resized M→L — that review is the line; further additions wait for post-MVP |
