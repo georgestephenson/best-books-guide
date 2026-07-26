@@ -8,7 +8,7 @@ Three use-cases send mail: `RegisterUser` (verification, plus the existing-accou
 
 In `RegisterUser` that is worse than a failed send. The order of operations is: create the user row (committed), issue the one-time token, then send. A send failure therefore returns 500 to a caller whose account *already exists*. Retrying hits `ConflictError`, whose handler sends the existing-account notice — which fails the same way, throwing from inside the `catch`. The address is then permanently unable to complete registration.
 
-This was not hypothetical. Production runs `EMAIL_TRANSPORT=ses` and the SES account is still in the sandbox — a production-access request was submitted 2026-07-21 and denied (case `178466565800037`). In the sandbox SES rejects any recipient that is not a verified identity, so **every** signup with a real address hit this path. Live signup on `bestbooks.guide` was broken; only the near-total absence of traffic hid it.
+This was not hypothetical. Production runs `EMAIL_TRANSPORT=ses` and the SES account is still in the sandbox — a production-access request was submitted 2026-07-21 and denied. In the sandbox SES rejects any recipient that is not a verified identity, so **every** signup with a real address hit this path. Live signup on `bestbooks.guide` was broken; only the near-total absence of traffic hid it.
 
 The sandbox merely made a latent bug fire every time. Throttling, a transient SES outage, or a bounced-address rejection all produce the same wedge in production with access granted.
 
