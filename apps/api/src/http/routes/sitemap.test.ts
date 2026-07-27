@@ -41,7 +41,9 @@ describe('GET /sitemap.xml', () => {
     expect(res.headers['content-type']).toContain('application/xml');
     expect(res.body).toContain('<?xml version="1.0" encoding="UTF-8"?>');
     expect(res.body).toContain('<url><loc>https://bestbooks.guide/</loc></url>');
+    // The static pages don't depend on the catalogue having any content yet.
     expect(res.body).toContain('<url><loc>https://bestbooks.guide/privacy</loc></url>');
+    expect(res.body).toContain('<url><loc>https://bestbooks.guide/support</loc></url>');
   });
 
   it('emits one <loc> per slug across all four collections', async () => {
@@ -57,8 +59,8 @@ describe('GET /sitemap.xml', () => {
     expect(res.body).toContain('<loc>https://bestbooks.guide/lists/best-history-books</loc>');
     expect(res.body).toContain('<loc>https://bestbooks.guide/books/sapiens</loc>');
     expect(res.body).toContain('<loc>https://bestbooks.guide/series/foundation</loc>');
-    // root + /privacy + one per collection
-    expect(res.body.match(/<url>/g)).toHaveLength(6);
+    // root + /privacy + /support + one per collection
+    expect(res.body.match(/<url>/g)).toHaveLength(7);
   });
 
   it('XML-escapes every reserved character in a slug', async () => {

@@ -12,6 +12,7 @@ import {
   PublicLayout,
   Rating,
 } from './components.js';
+import { SupportAsk } from './support.js';
 import { TrackButton } from '../member/TrackButton.js';
 
 function Item({ item }: { item: ListItem }) {
@@ -153,6 +154,9 @@ export function ListPage() {
               </div>
             </div>
           ) : null}
+
+          {/* Only once there's a finished list above it — never on an empty placeholder. */}
+          {data.items.length > 0 || data.sublists.length > 0 ? <SupportAsk /> : null}
         </>
       )}
     </PublicLayout>
