@@ -5,6 +5,7 @@ import { ListPage } from './features/catalogue/ListPage.js';
 import { BookPage } from './features/catalogue/BookPage.js';
 import { SeriesPage } from './features/catalogue/SeriesPage.js';
 import { NotFoundPage } from './features/catalogue/NotFoundPage.js';
+import { PrivacyPage } from './features/catalogue/PrivacyPage.js';
 import { ErrorPage } from './features/catalogue/ErrorPage.js';
 import { CataloguePage } from './features/admin/CataloguePage.js';
 import { ImportPage } from './features/admin/ImportPage.js';
@@ -33,6 +34,7 @@ export const routes = [
   { path: '/lists/:slug', element: <ListPage /> },
   { path: '/books/:slug', element: <BookPage /> },
   { path: '/series/:slug', element: <SeriesPage /> },
+  { path: '/privacy', element: <PrivacyPage /> },
   { path: '/my-books', element: <MyBooksPage /> },
   { path: '/admin', element: <CataloguePage /> },
   { path: '/admin/import', element: <ImportPage /> },

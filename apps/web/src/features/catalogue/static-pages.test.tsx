@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { AuthProvider } from '../auth/AuthContext.js';
+import { PrivacyPage } from './PrivacyPage.js';
 import { ErrorPage } from './ErrorPage.js';
 
 /**
@@ -30,6 +31,50 @@ function robotsMeta() {
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.restoreAllMocks(); // the reload test stubs window.location
+});
+
+describe('PrivacyPage', () => {
+  it('says what is stored, in the sections a reader would look for', async () => {
+    renderWithDataRouter([{ path: '/', element: <PrivacyPage /> }]);
+
+    expect(await screen.findByRole('heading', { name: 'Privacy', level: 1 })).toBeInTheDocument();
+    for (const section of [
+      /the short version/i,
+      /if you only read/i,
+      /if you have an account/i,
+      /cookies and local storage/i,
+      /logs and backups/i,
+      /who else is involved/i,
+      /your data, your call/i,
+    ]) {
+      expect(screen.getByRole('heading', { name: section, level: 2 })).toBeInTheDocument();
+    }
+  });
+
+  it('offers a deletion route by email', async () => {
+    renderWithDataRouter([{ path: '/', element: <PrivacyPage /> }]);
+
+    const link = await screen.findByRole('link', { name: /privacy@bestbooks\.guide/ });
+    expect(link).toHaveAttribute('href', 'mailto:privacy@bestbooks.guide');
+  });
+
+  it('flags that accounts are not open yet only while the auth UI is held back', async () => {
+    vi.stubEnv('VITE_AUTH_UI', 'false');
+    const { unmount } = renderWithDataRouter([{ path: '/', element: <PrivacyPage /> }]);
+    expect(await screen.findByText(/aren.t open to the public yet/i)).toBeInTheDocument();
+    unmount();
+
+    vi.stubEnv('VITE_AUTH_UI', 'true');
+    renderWithDataRouter([{ path: '/', element: <PrivacyPage /> }]);
+    await screen.findByRole('heading', { name: 'Privacy', level: 1 });
+    expect(screen.queryByText(/aren.t open to the public yet/i)).not.toBeInTheDocument();
+  });
+
+  it('is indexable — unlike the error pages', async () => {
+    renderWithDataRouter([{ path: '/', element: <PrivacyPage /> }]);
+    await screen.findByRole('heading', { name: 'Privacy', level: 1 });
+    expect(robotsMeta()).toBeNull();
+  });
 });
 
 describe('ErrorPage', () => {

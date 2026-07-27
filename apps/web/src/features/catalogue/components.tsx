@@ -272,8 +272,13 @@ export function PublicLayout({ children }: { children: ReactNode }) {
       <SiteHeader />
       <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">{children}</main>
       <footer className="border-t border-line">
-        <div className="mx-auto max-w-4xl px-6 py-6 font-sans text-xs text-faint">
-          Best Books Guide — curated, opinionated, reader-supported.
+        <div className="mx-auto flex max-w-4xl flex-wrap items-baseline justify-between gap-x-6 gap-y-2 px-6 py-6 font-sans text-xs text-faint">
+          <span>Best Books Guide — curated, opinionated, reader-supported.</span>
+          <nav aria-label="Site information">
+            <Link className="text-faint hover:text-accent hover:underline" to="/privacy">
+              Privacy
+            </Link>
+          </nav>
         </div>
       </footer>
     </div>

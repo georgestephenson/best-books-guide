@@ -63,7 +63,7 @@ Auth semantics (docs/05, [ADR-0009](adr/0009-refresh-reuse-grace-window.md)): **
 
 **Public responses stay member-agnostic.** Every public catalogue response is identical for visitors and members — no embedded `viewer` block. Member state is served from the dedicated `/me/*` routes below, addressed by the **same public slug**. This keeps public pages anonymous and edge-cacheable (docs/03 §Redis `cache:page:`); the SPA book/list pages fetch the public payload plus a small `/me/*` payload in parallel.
 
-`sitemap.xml` and `robots.txt` are served by the API at the root (Nginx-proxied) from published slugs.
+`sitemap.xml` and `robots.txt` are served by the API at the root (Nginx-proxied) from published slugs, plus the static SPA routes worth indexing (`/`, `/privacy`). The error pages are deliberately absent and carry `noindex`: the SPA fallback answers unknown paths with a 200, so a soft 404 would otherwise be indexable.
 
 ### Member features
 All member resources are addressed by the same public **slug** as the catalogue (not an internal id). Shelving is `M`; writing a review is `MV` (verified email — docs/01 F2). Reporting is `M` (any member may flag; it isn't content creation).
