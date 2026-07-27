@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { screen, waitFor } from '@testing-library/react';
 import { API_BASE_PATH, type SubjectDetail, type TrackedList } from '@bestbooks/shared';
@@ -39,6 +39,11 @@ const subjects: SubjectDetail[] = [
   },
 ];
 
+// Feature-flag stubs must never leak into the next test.
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe('App (catalogue home)', () => {
   it('renders subjects and their lists with a sign-in link', async () => {
     server.use(http.get(`${API_BASE_PATH}/subjects`, () => HttpResponse.json(subjects)));
@@ -52,6 +57,15 @@ describe('App (catalogue home)', () => {
       '/lists/best-fiction',
     );
     expect(screen.getByRole('link', { name: /sign in/i })).toBeInTheDocument();
+  });
+
+  it('hides the header sign-in link when the auth UI flag is off', async () => {
+    vi.stubEnv('VITE_AUTH_UI', 'false');
+    server.use(http.get(`${API_BASE_PATH}/subjects`, () => HttpResponse.json(subjects)));
+    renderApp(<App />);
+    // The catalogue itself is unaffected — only the account entry point goes quiet.
+    expect(await screen.findByRole('link', { name: 'Fiction' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /sign in/i })).not.toBeInTheDocument();
   });
 
   it('shows an empty state before any list is published', async () => {

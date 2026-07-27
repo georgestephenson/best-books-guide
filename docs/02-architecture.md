@@ -88,7 +88,7 @@ Errors: use-cases throw typed domain errors (`NotFound`, `Conflict`, `Forbidden`
 SPA first, deliberately built so SSR can be added without rework ([ADR-0008](adr/0008-spa-first-ssr-ready.md)).
 
 - **React 19 + Vite 7 + Tailwind CSS 4** (via `@tailwindcss/vite` — no PostCSS config needed).
-- **React Router 7** in data/library mode. Its framework mode is the later SSR upgrade path, so route structure follows RR conventions now.
+- **React Router 8** in data/library mode. Its framework mode is the later SSR upgrade path, so route structure follows RR conventions now.
 - **TanStack Query 5** for all server state (caching, revalidation, optimistic shelf/rating updates). Components never `fetch` directly; a thin typed API client in `packages/shared` mirrors the REST contract.
 - **React 19 native document metadata**: `<title>`/`<meta>` rendered in route components (hoisted by React) — per-page titles, descriptions, OpenGraph tags without a helmet library.
 - **Forms**: react-hook-form for auth/admin forms.
@@ -121,11 +121,11 @@ SEO readiness in the SPA (cheap now, pays off later):
 | Database | PostgreSQL | **18** | Current major (Sep 2025); native `uuidv7()` for PKs; supported to 2030 |
 | Cache/sessions | Redis | **8.x** | Sessions/refresh-tokens, rate limiting, hot-page cache; AGPLv3 licence option is fine for self-hosting ([ADR-0007](adr/0007-self-managed-data-stores.md)) |
 | Frontend | React + Vite + Tailwind | 19 / 7 / 4 | Current stable line; Tailwind 4's Vite plugin, zero-config |
-| Routing / data | React Router 7 + TanStack Query 5 | latest | Mainstream 2026 pair; RR7 gives the SSR upgrade path |
+| Routing / data | React Router 8 + TanStack Query 5 | latest | Mainstream 2026 pair; RR's framework mode gives the SSR upgrade path |
 | Auth | `@fastify/jwt` + rotating opaque refresh tokens in Redis | — | 2026 gold standard for SPAs; details in [05 — Security](05-security.md) ([ADR-0005](adr/0005-jwt-refresh-rotation.md)) |
 | Passwords | Argon2id (`argon2`) | OWASP params | Current OWASP recommendation over bcrypt |
 | Testing | Vitest + Testing Library; Fastify `.inject()`; Playwright (from M4) | latest | One test runner across the monorepo; gates & budgets in §Testing strategy |
-| Lint/format | ESLint 9 (flat config) + Prettier | latest | Mainstream; Biome noted as a future consolidation option |
+| Lint/format | ESLint 10 (flat config) + Prettier | latest | Mainstream; Biome noted as a future consolidation option |
 | Package manager | npm workspaces | 11 (bundled with Node 24) | Practising canonical npm is a project goal ([ADR-0002](adr/0002-single-repo-npm-workspaces.md)); zero extra toolchain |
 | Host OS | Ubuntu 24.04 LTS | — | Battle-tested; revisit 26.04 LTS (Apr 2026, supported to 2031) once `.1` lands — [TODO](../TODO.md) |
 | Infra | Terraform ≥1.12 + AWS provider 6.x, Ansible core ≥2.19, Monit | — | See [06](06-infrastructure.md)/[07](07-operations.md); S3-native state locking (no DynamoDB) |

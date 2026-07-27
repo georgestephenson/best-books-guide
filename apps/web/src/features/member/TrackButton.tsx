@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext.js';
+import { authUiEnabled } from '../../lib/featureFlags.js';
 import { fetchListTracking, fetchTrackedLists, memberKeys, trackList, untrackList } from './api.js';
 import { ProgressBar } from './components.js';
 
@@ -37,6 +38,8 @@ export function TrackButton({ slug }: { slug: string }) {
   });
 
   if (!isAuthed) {
+    // Accounts hidden: there is nothing to nudge toward, so stay quiet (lib/featureFlags.ts).
+    if (!authUiEnabled()) return null;
     return (
       <p className="font-sans text-sm text-muted">
         <Link className="text-accent hover:underline" to="/login">
