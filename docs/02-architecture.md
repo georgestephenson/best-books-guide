@@ -35,7 +35,7 @@ Single GitHub repo, npm workspaces ([ADR-0002](adr/0002-single-repo-npm-workspac
 ```
 best-books-guide/
 ├── apps/
-│   ├── web/                 # React 19 + Vite 7 + Tailwind 4 SPA
+│   ├── web/                 # React 19 + Vite 8 + Tailwind 4 SPA
 │   └── api/                 # Fastify 5 + Drizzle (see layering below)
 ├── packages/
 │   └── shared/              # API contract types, shared constants, slug helpers
@@ -87,7 +87,7 @@ Errors: use-cases throw typed domain errors (`NotFound`, `Conflict`, `Forbidden`
 
 SPA first, deliberately built so SSR can be added without rework ([ADR-0008](adr/0008-spa-first-ssr-ready.md)).
 
-- **React 19 + Vite 7 + Tailwind CSS 4** (via `@tailwindcss/vite` — no PostCSS config needed).
+- **React 19 + Vite 8 + Tailwind CSS 4** (via `@tailwindcss/vite` — no PostCSS config needed).
 - **React Router 8** in data/library mode. Its framework mode is the later SSR upgrade path, so route structure follows RR conventions now.
 - **TanStack Query 5** for all server state (caching, revalidation, optimistic shelf/rating updates). Components never `fetch` directly; a thin typed API client in `packages/shared` mirrors the REST contract.
 - **React 19 native document metadata**: `<title>`/`<meta>` rendered in route components (hoisted by React) — per-page titles, descriptions, OpenGraph tags without a helmet library.
