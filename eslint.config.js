@@ -24,6 +24,11 @@ export default tseslint.config(
       'react-hooks/exhaustive-deps': 'warn',
     },
   },
+  {
+    // Repo tooling run by hand from a terminal, never bundled (scripts/brand/…)
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { globals: { ...globals.node } },
+  },
   // Must be last: turns off stylistic rules that Prettier owns
   prettier,
 );

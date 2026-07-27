@@ -4,6 +4,35 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Best Books Guide</title>
+
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#1f5140" />
+
+    <!--
+      Default social card. Each page sets its own <title>/<meta name="description"> at
+      runtime through PageMeta (React 19 hoists them), but the crawlers that build link
+      previews don't run JS — so the og:/twitter: tags live here as static defaults and
+      describe the site rather than the page. Per-page cards need the SSR upgrade
+      ([ADR-0008], docs/08 backlog #1); until then a shared list previews as the site
+      itself, which is generic but honest. Keep these in sync with the <PageMeta> copy
+      on the home page.
+    -->
+    <meta property="og:site_name" content="Best Books Guide" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://bestbooks.guide/" />
+    <meta property="og:title" content="Best Books Guide — the best books by subject" />
+    <meta
+      property="og:description"
+      content="A curated, opinionated guide to the best books by subject. An editor picks, ranks, and says why — so you can decide what to read next."
+    />
+    <meta property="og:image" content="https://bestbooks.guide/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Best Books Guide — the best books, by subject." />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <div id="root"></div>

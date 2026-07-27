@@ -90,7 +90,7 @@ SPA first, deliberately built so SSR can be added without rework ([ADR-0008](adr
 - **React 19 + Vite 8 + Tailwind CSS 4** (via `@tailwindcss/vite` — no PostCSS config needed).
 - **React Router 8** in data/library mode. Its framework mode is the later SSR upgrade path, so route structure follows RR conventions now.
 - **TanStack Query 5** for all server state (caching, revalidation, optimistic shelf/rating updates). Components never `fetch` directly; a thin typed API client in `packages/shared` mirrors the REST contract.
-- **React 19 native document metadata**: `<title>`/`<meta>` rendered in route components (hoisted by React) — per-page titles, descriptions, OpenGraph tags without a helmet library.
+- **React 19 native document metadata**: `<title>`/`<meta>` rendered in route components (hoisted by React) — per-page titles and descriptions without a helmet library. **OpenGraph is the exception** (M5): the crawlers that build link previews don't run JS, so the social card (`og:*`, `twitter:card`, `og.png`) is static in `index.html` and describes the site rather than the page. Per-page cards need SSR ([ADR-0008](adr/0008-spa-first-ssr-ready.md)); until then a shared list previews as the site itself. Same reason the error pages carry `noindex` — a JS-rendered page can still be crawled, and the SPA fallback answers unknown paths with a 200.
 - **Forms**: react-hook-form for auth/admin forms.
 - **Client state**: TanStack Query covers nearly everything; anything left (e.g. toasts) uses React context — add Zustand only if pain appears.
 - **Calm and fast by principle** ([01 — Product](01-product.md) §Principles): no third-party scripts, ads, analytics, or trackers — the CSP's `script-src 'self'` ([05 — Security](05-security.md)) makes the promise structural, not aspirational. Small bundle, book content over widgets.
@@ -104,7 +104,7 @@ apps/web/src/
 ```
 
 SEO readiness in the SPA (cheap now, pays off later):
-- Stable slug URLs identical to what SSR would use; canonical tags.
+- Stable slug URLs identical to what SSR would use. (Canonical tags were planned here and haven't shipped — with one origin, no query-string routes and no duplicate paths there's nothing yet for them to disambiguate; they land with SSR, where the tag can be rendered server-side and actually be seen.)
 - `sitemap.xml` and `robots.txt` generated **server-side** by the API from published content, proxied by Nginx.
 - JSON-LD (`schema.org/Book`, `ItemList`) rendered on book/list pages.
 - Upgrade path when SEO matters: switch RR7 to framework mode with SSR on the same host (Node process behind Nginx) — data loading already goes through the REST API, components are unchanged.
