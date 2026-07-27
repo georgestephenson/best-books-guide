@@ -67,6 +67,8 @@ export default defineConfig({
       include: ['packages/*/src/**', 'apps/*/src/**'],
       exclude: [
         '**/*.test.{ts,tsx}',
+        '**/*.css', // Vitest 4 dropped `coverage.extension`, so stylesheets otherwise
+        // land in the report at 0% and drag the denominator (apps/web/src/index.css)
         '**/*-fakes.ts', // in-memory port doubles used only by unit tests
         '**/test/**',
         '**/*.d.ts',
