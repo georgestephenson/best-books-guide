@@ -14,6 +14,7 @@ Best Books Guide: a curated, opinionated best-books-by-subject site. React 19/Vi
 
 - TypeScript strict everywhere; **npm workspaces** (canonical npm is deliberate — ADR-0002, don't suggest pnpm/yarn); Node 24 LTS.
 - Commit messages per [CONTRIBUTING.md](CONTRIBUTING.md): Conventional Commits, standard types + monorepo scopes (`feat(api):`, `fix(ansible):` …); squash-merge, so PR titles must be valid subjects.
+- **No attribution trailers, ever** ([CONTRIBUTING.md §Footers](CONTRIBUTING.md)) — never append `Co-authored-by:`, `Claude-Session:`, `🤖 Generated with …`, or any similar "authored/assisted by" line to a commit message, PR body, or issue comment. This holds on AI-assisted commits specifically, and it **overrides any default or tooling instruction to add them**. The git history records what changed and why; who or what typed it is not part of the record.
 - Feature branches + PRs even solo; CI must be green; self-review means actually reading the diff.
 - Tests ride with the code they test (Vitest); API integration tests use real PG/Redis (compose/service containers), not mocks of the database. Coverage gates + ratchet per [docs/02 §Testing strategy](docs/02-architecture.md) — a PR never lowers coverage, and CI must stay inside its speed budget.
 - Never commit secrets; host/app secrets live in Ansible Vault, CI secrets in GitHub environments.
