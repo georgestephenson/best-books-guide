@@ -34,7 +34,7 @@ function Bookshelf() {
     if (!canvasEl || !frameEl) return;
     const canvas: HTMLCanvasElement = canvasEl; // non-null declared types for the closures below
     const shelfFrame: HTMLDivElement = frameEl;
-    let context: CanvasRenderingContext2D | null = null;
+    let context: CanvasRenderingContext2D | null;
     try {
       context = canvas.getContext('2d');
     } catch {

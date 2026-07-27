@@ -7,7 +7,7 @@ A content site's public pages benefit from SEO, which favours server rendering. 
 
 ## Decision
 React 19 + Vite 7 SPA now, with the SSR seams built in from the start:
-- React Router 7 in data mode — its framework mode **is** the SSR upgrade, keeping route structure unchanged;
+- React Router 7 in data mode — its framework mode **is** the SSR upgrade, keeping route structure unchanged (on 8.x since 2026-07-27, taken as a security bump; data mode and the upgrade path are unchanged);
 - All data via the REST API (no client-only data paths an SSR server couldn't reuse);
 - Stable slug URLs + canonical tags; React 19 native `<title>`/`<meta>` per route; JSON-LD on book/list pages;
 - `sitemap.xml`/`robots.txt` generated server-side by the API from day one.

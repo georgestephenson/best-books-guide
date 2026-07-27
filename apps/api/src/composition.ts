@@ -28,6 +28,7 @@ import { JoseAccessTokenService } from './infra/security/jose-access-token-servi
 import { NodeRandomSource, Sha256TokenHasher } from './infra/security/crypto.js';
 import { SesEmailSender } from './infra/email/ses-email-sender.js';
 import { LoggingEmailSender } from './infra/email/logging-email-sender.js';
+import { BestEffortEmailSender } from './infra/email/best-effort-email-sender.js';
 import { ACCESS_TOKEN_TTL_SECONDS } from './app/auth-constants.js';
 import { GetHealth } from './app/usecases/get-health.js';
 import { SessionIssuer } from './app/usecases/session-issuer.js';
@@ -154,11 +155,14 @@ export function composeServerDeps(input: CompositionInput): ServerDeps {
     audience: 'bestbooks-api',
     ttlSeconds: ACCESS_TOKEN_TTL_SECONDS,
   });
-  const emailSender =
+  // Wrapped even when a test injects its own transport, so every environment shares the
+  // production delivery-failure policy (ADR-0011).
+  const emailSender = new BestEffortEmailSender(
     input.emailSender ??
-    (config.EMAIL_TRANSPORT === 'ses'
-      ? new SesEmailSender(config.EMAIL_FROM, config.AWS_REGION)
-      : new LoggingEmailSender());
+      (config.EMAIL_TRANSPORT === 'ses'
+        ? new SesEmailSender(config.EMAIL_FROM, config.AWS_REGION)
+        : new LoggingEmailSender()),
+  );
 
   const publicBaseUrl = config.PUBLIC_BASE_URL;
   const sessionIssuer = new SessionIssuer({ clock, sessions, accessTokens, random, tokenHasher });

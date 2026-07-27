@@ -14,7 +14,8 @@ export default async function setup(): Promise<void> {
   } catch (err) {
     throw new Error(
       `Integration-test setup failed to migrate ${TEST_DATABASE_URL}. ` +
-        `Are the data stores up? Run \`docker compose up -d\`.\n${String(err)}`,
+        `Are the data stores up? Run \`docker compose up -d\`.`,
+      { cause: err },
     );
   } finally {
     await pool.end();
