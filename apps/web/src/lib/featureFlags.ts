@@ -7,13 +7,15 @@
  */
 
 /**
- * Whether to offer accounts to anonymous visitors — the "Sign in" link in the header
- * and the sign-in prompts on book/list pages.
+ * Whether to offer accounts to anonymous visitors — a working "Sign in" link in the
+ * header and the sign-in prompts on book/list pages.
  *
  * Off in production while SES is stuck in the sandbox: transactional mail only reaches
  * verified identities, so a stranger who signs up gets no verification email (ADR-0011
- * keeps that from 500-ing, but it still leaves them unable to verify). Hiding the entry
- * points keeps the public site honest — it never invites a signup it cannot complete.
+ * keeps that from 500-ing, but it still leaves them unable to verify). With the flag off
+ * the header still shows "Sign in", but it opens a "coming soon" note instead of the
+ * signup, and the in-page prompts stay hidden — the public site never invites a signup
+ * it cannot complete.
  *
  * The `/login`, `/register` and other auth routes stay registered and fully working, so
  * the editor can still sign in by typing the URL to maintain the catalogue.

@@ -98,15 +98,8 @@ export function Crumbs({ trail }: { trail: { label: string; to?: string }[] }) {
  * (Admin, Sign out) — a disclosure so the nav stays uncluttered on mobile.
  * Closes on outside click, Escape, or choosing an item.
  */
-function UserMenu({
-  displayName,
-  isAdmin,
-  onSignOut,
-}: {
-  displayName: string;
-  isAdmin: boolean;
-  onSignOut: () => void;
-}) {
+/** Popover open state that closes on Escape or a click outside the returned ref. */
+function useDismissablePopover() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -125,6 +118,20 @@ function UserMenu({
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [open]);
+
+  return { open, setOpen, ref };
+}
+
+function UserMenu({
+  displayName,
+  isAdmin,
+  onSignOut,
+}: {
+  displayName: string;
+  isAdmin: boolean;
+  onSignOut: () => void;
+}) {
+  const { open, setOpen, ref } = useDismissablePopover();
 
   return (
     <div className="relative" ref={ref}>
@@ -178,6 +185,39 @@ function UserMenu({
   );
 }
 
+/**
+ * Stands in for the header "Sign in" link while accounts are held back
+ * (`VITE_AUTH_UI=false` — see lib/featureFlags.ts). The entry point stays visible so
+ * the site reads as finished, but it opens a plain "coming soon" note rather than a
+ * signup the SES sandbox cannot complete.
+ */
+function ComingSoonSignIn() {
+  const { open, setOpen, ref } = useDismissablePopover();
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        className="text-accent hover:underline"
+        aria-haspopup="true"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        Sign in
+      </button>
+      {open ? (
+        <p
+          role="status"
+          className="absolute right-0 z-10 mt-2 w-64 rounded-md border border-line bg-panel px-4 py-3 text-left text-muted shadow-lg"
+        >
+          Coming soon! Reader accounts aren't open yet — the catalogue is free to read in the
+          meantime.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function SiteHeader() {
   const { user, status, logout } = useAuth();
   return (
@@ -202,7 +242,9 @@ function SiteHeader() {
             <Link className="text-accent hover:underline" to="/login">
               Sign in
             </Link>
-          ) : null}
+          ) : (
+            <ComingSoonSignIn />
+          )}
         </nav>
       </div>
     </header>
