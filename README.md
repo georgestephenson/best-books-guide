@@ -40,6 +40,8 @@ npm run lint         # ESLint 9 (flat config)
 npm run build        # build shared → api → web
 ```
 
+Brand assets (`apps/web/public/`) are committed, so nothing in the build or CI needs a browser. Regenerate them only after editing `apps/web/public/favicon.svg` or `scripts/brand/og.html`: `node scripts/brand/generate.mjs` (finds a local Chrome/Chromium, or set `CHROME_PATH`).
+
 **Live and self-deploying**: the whole pipeline — Terraform → Ansible → CI/CD → Monit → HTTPS — runs itself; a push to `main` reaches production with zero manual steps (`curl https://bestbooks.guide/healthz` → `{"status":"ok",...}`).
 
 **Progress** — full detail and scope in the [delivery plan](docs/08-delivery-plan.md):

@@ -5,7 +5,7 @@ import { PageMeta, PublicLayout } from './components.js';
 export function NotFoundPage() {
   return (
     <PublicLayout>
-      <PageMeta title="Not found — Best Books Guide" />
+      <PageMeta title="Not found — Best Books Guide" noIndex />
       <div className="max-w-xl py-10">
         <p className="eyebrow">404</p>
         <h1 className="mt-2 text-balance font-serif text-4xl font-semibold tracking-tight">

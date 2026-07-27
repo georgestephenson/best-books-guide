@@ -9,11 +9,25 @@ import { useAuth } from '../auth/AuthContext.js';
  * sets its own document metadata by rendering this ([ADR-0008] keeps the route tree
  * SSR-ready, where the same tags become the server-rendered head).
  */
-export function PageMeta({ title, description }: { title: string; description?: string }) {
+export function PageMeta({
+  title,
+  description,
+  noIndex = false,
+}: {
+  title: string;
+  description?: string;
+  /**
+   * Keep the page out of search results. The SPA fallback answers unknown paths with
+   * a 200 (Nginx can't know a slug is missing), so error pages would otherwise be
+   * indexed as soft 404s — this is what tells a crawler they're not real pages.
+   */
+  noIndex?: boolean;
+}) {
   return (
     <>
       <title>{title}</title>
       {description ? <meta name="description" content={description} /> : null}
+      {noIndex ? <meta name="robots" content="noindex" /> : null}
     </>
   );
 }
@@ -258,8 +272,13 @@ export function PublicLayout({ children }: { children: ReactNode }) {
       <SiteHeader />
       <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">{children}</main>
       <footer className="border-t border-line">
-        <div className="mx-auto max-w-4xl px-6 py-6 font-sans text-xs text-faint">
-          Best Books Guide — curated, opinionated, reader-supported.
+        <div className="mx-auto flex max-w-4xl flex-wrap items-baseline justify-between gap-x-6 gap-y-2 px-6 py-6 font-sans text-xs text-faint">
+          <span>Best Books Guide — curated, opinionated, reader-supported.</span>
+          <nav aria-label="Site information">
+            <Link className="text-faint hover:text-accent hover:underline" to="/privacy">
+              Privacy
+            </Link>
+          </nav>
         </div>
       </footer>
     </div>

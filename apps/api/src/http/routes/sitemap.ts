@@ -17,6 +17,8 @@ function xmlEscape(s: string): string {
 function buildSitemap(base: string, slugs: SitemapSlugs): string {
   const urls = [
     `${base}/`,
+    `${base}/privacy`, // static SPA route — no slug to look up, but it belongs in the index
+
     ...slugs.subjects.map((s) => `${base}/subjects/${s}`),
     ...slugs.lists.map((s) => `${base}/lists/${s}`),
     ...slugs.books.map((s) => `${base}/books/${s}`),

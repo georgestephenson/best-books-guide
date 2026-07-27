@@ -1,0 +1,15 @@
+{
+  "name": "Best Books Guide",
+  "short_name": "Best Books",
+  "description": "A curated, opinionated guide to the best books by subject.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "browser",
+  "background_color": "#f1f2ee",
+  "theme_color": "#1f5140",
+  "icons": [
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512" },
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any" }
+  ]
+}

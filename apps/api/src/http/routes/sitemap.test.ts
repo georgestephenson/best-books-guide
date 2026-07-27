@@ -33,7 +33,7 @@ afterEach(async () => {
 });
 
 describe('GET /sitemap.xml', () => {
-  it('serves XML with the site root even when the catalogue is empty', async () => {
+  it('serves XML with the static pages even when the catalogue is empty', async () => {
     app = await serve(emptySlugs);
     const res = await app.inject({ method: 'GET', url: '/sitemap.xml' });
 
@@ -41,6 +41,7 @@ describe('GET /sitemap.xml', () => {
     expect(res.headers['content-type']).toContain('application/xml');
     expect(res.body).toContain('<?xml version="1.0" encoding="UTF-8"?>');
     expect(res.body).toContain('<url><loc>https://bestbooks.guide/</loc></url>');
+    expect(res.body).toContain('<url><loc>https://bestbooks.guide/privacy</loc></url>');
   });
 
   it('emits one <loc> per slug across all four collections', async () => {
@@ -56,8 +57,8 @@ describe('GET /sitemap.xml', () => {
     expect(res.body).toContain('<loc>https://bestbooks.guide/lists/best-history-books</loc>');
     expect(res.body).toContain('<loc>https://bestbooks.guide/books/sapiens</loc>');
     expect(res.body).toContain('<loc>https://bestbooks.guide/series/foundation</loc>');
-    // root + one per collection
-    expect(res.body.match(/<url>/g)).toHaveLength(5);
+    // root + /privacy + one per collection
+    expect(res.body.match(/<url>/g)).toHaveLength(6);
   });
 
   it('XML-escapes every reserved character in a slug', async () => {

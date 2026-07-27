@@ -45,7 +45,7 @@ infra/ansible/
 └── roles/
     ├── common       # users, ssh hardening, ufw, unattended-upgrades, fail2ban, zstd/awscli
     ├── nodejs       # Node 24 via NodeSource (arm64; bundles npm 11)
-    ├── nginx        # vhost: SPA static + /api proxy + /covers, TLS (certbot), headers
+    ├── nginx        # vhost: SPA static + /api proxy + /covers, TLS (certbot), headers, 5xx page
     ├── app          # service user, /srv/bestbooks layout, systemd unit, .env from Vault
     ├── monit        # all checks + SES SMTP alerting (below)
     ├── postgresql   # PG 18 via PGDG apt, tuned for 2GB host, pg_trgm/citext, app role
@@ -82,6 +82,8 @@ Branch protection on `main`: CI required, one approving review required (solo-de
 `deploy.yml` steps: fetch tarball from S3 (instance role) → unpack to `releases/<sha>` → link shared `.env` → **pre-migration `pg_dump`** → `node dist/migrate.js` under a PG advisory lock → swap `current` symlink → `systemctl restart bestbooks-api` → poll `/healthz` (10×3s) → on failure: swap symlink back, restart, **fail loudly**; migrations are expand-only so the previous release keeps working ([03 — Data model](03-data-model.md)) → prune old releases. Web assets are static files in the release; Nginx serves `current/apps/web/dist`.
 
 > Migrations ship as a compiled entrypoint, not the `drizzle-kit` CLI: `drizzle-kit` stays a devDependency (used only to *generate*), so it isn't in the pruned production `node_modules`. `dist/migrate.js` uses `drizzle-orm`'s runtime migrator (a prod dependency) against the committed `apps/api/drizzle/` folder, wrapped in `pg_advisory_lock` so overlapping deploys can't race. The `apps/api/drizzle` folder is added to the release tarball's allowlist for this reason.
+
+**What a visitor sees when it breaks**: Nginx answers 500/502/503/504 with `50x.html` from the release's web build (`error_page`, original status kept) — a standalone page with no bundle, API or webfont dependency, so it still renders when the app is the thing that's down. Unmatched paths fall through to the SPA, which renders its own 404; that response is a 200 (the fallback can't know a slug is missing), so both error pages carry `noindex` to keep soft 404s out of search results. Inside the running app, a thrown render error lands on the router's error page rather than a blank screen.
 
 systemd unit (`app` role): `User=bestbooks`, `EnvironmentFile=/srv/bestbooks/shared/.env`, `ExecStart=node /srv/bestbooks/current/apps/api/dist/main.js`, `Restart=on-failure`, `RestartSec=3`, hardening per [05 — Security](05-security.md), `SyslogIdentifier=bestbooks-api`.
 
