@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { API_BASE_PATH, type SubjectDetail, type TrackedList } from '@bestbooks/shared';
 import { App } from './App.js';
 import { renderApp } from './test/render.js';
@@ -59,13 +60,16 @@ describe('App (catalogue home)', () => {
     expect(screen.getByRole('link', { name: /sign in/i })).toBeInTheDocument();
   });
 
-  it('hides the header sign-in link when the auth UI flag is off', async () => {
+  it('answers the header sign-in with "coming soon" when the auth UI flag is off', async () => {
     vi.stubEnv('VITE_AUTH_UI', 'false');
     server.use(http.get(`${API_BASE_PATH}/subjects`, () => HttpResponse.json(subjects)));
     renderApp(<App />);
-    // The catalogue itself is unaffected — only the account entry point goes quiet.
+    // The catalogue itself is unaffected — only the route to signup closes.
     expect(await screen.findByRole('link', { name: 'Fiction' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /sign in/i })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    expect(screen.getByText(/coming soon/i)).toBeInTheDocument();
   });
 
   it('shows an empty state before any list is published', async () => {
