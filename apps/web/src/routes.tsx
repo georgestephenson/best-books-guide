@@ -1,10 +1,11 @@
-import { createBrowserRouter } from 'react-router';
+import { createBrowserRouter, Outlet } from 'react-router';
 import { App } from './App.js';
 import { SubjectPage } from './features/catalogue/SubjectPage.js';
 import { ListPage } from './features/catalogue/ListPage.js';
 import { BookPage } from './features/catalogue/BookPage.js';
 import { SeriesPage } from './features/catalogue/SeriesPage.js';
 import { NotFoundPage } from './features/catalogue/NotFoundPage.js';
+import { ErrorPage } from './features/catalogue/ErrorPage.js';
 import { CataloguePage } from './features/admin/CataloguePage.js';
 import { ImportPage } from './features/admin/ImportPage.js';
 import { BookFormPage } from './features/admin/BookFormPage.js';
@@ -52,4 +53,12 @@ export const routes = [
   { path: '*', element: <NotFoundPage /> },
 ];
 
-export const router = createBrowserRouter(routes);
+/**
+ * A pathless parent route exists only to hang `errorElement` on every page at once:
+ * anything a route throws (a render bug, a stale chunk after a deploy) lands on the
+ * calm error page instead of the router's default. Child paths stay absolute, so the
+ * tree above is unaffected — and tests can still mount a page component directly.
+ */
+export const router = createBrowserRouter([
+  { element: <Outlet />, errorElement: <ErrorPage />, children: routes },
+]);

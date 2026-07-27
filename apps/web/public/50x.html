@@ -1,0 +1,89 @@
+<!doctype html>
+<!--
+  Nginx's error page for 5xx (roles/nginx §error_page). It is served when the app
+  can't be — a failed deploy, a wedged process, a restart in progress — so it must
+  stand alone: no bundle, no webfont, no script (the CSP forbids inline JS anyway).
+  Styles are the design tokens from apps/web/src/index.css, hard-coded.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Something went wrong — Best Books Guide</title>
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        background: #f1f2ee;
+        color: #23261f;
+        font-family:
+          'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        max-width: 32rem;
+      }
+      p.eyebrow {
+        margin: 0;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #656d5b;
+      }
+      h1 {
+        margin: 0.5rem 0 0;
+        font-size: 2.25rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        line-height: 1.15;
+      }
+      p.lede {
+        margin: 1rem 0 0;
+        color: #5e6358;
+        line-height: 1.6;
+      }
+      a {
+        display: inline-block;
+        margin-top: 1.5rem;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        font-size: 0.875rem;
+        color: #1f5140;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Server error</p>
+      <h1>The shelves are being restacked</h1>
+      <p class="lede">
+        Something went wrong at our end — not yours. It&rsquo;s usually brief: wait a moment and try
+        the page again. If it keeps happening, the catalogue will be back shortly.
+      </p>
+      <a href="/">← Back to browse</a>
+    </main>
+  </body>
+</html>

@@ -113,4 +113,15 @@ server {
     location / {
         try_files $uri $uri/ /index.html;
     }
+
+    # 5xx: a calm static page instead of nginx's default (docs/07 §Failure modes).
+    # It ships with the SPA build (apps/web/public/50x.html) and stands alone — no
+    # bundle, no API — so it still renders when the app is the thing that's broken.
+    # No `=` rewrite on error_page, so the original 500/502/503/504 status is kept.
+    # Deliberately no add_header here: like /covers/, declaring one would drop the
+    # inherited security headers (HSTS included) from the error response.
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        internal;
+    }
 }

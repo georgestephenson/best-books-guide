@@ -9,11 +9,25 @@ import { useAuth } from '../auth/AuthContext.js';
  * sets its own document metadata by rendering this ([ADR-0008] keeps the route tree
  * SSR-ready, where the same tags become the server-rendered head).
  */
-export function PageMeta({ title, description }: { title: string; description?: string }) {
+export function PageMeta({
+  title,
+  description,
+  noIndex = false,
+}: {
+  title: string;
+  description?: string;
+  /**
+   * Keep the page out of search results. The SPA fallback answers unknown paths with
+   * a 200 (Nginx can't know a slug is missing), so error pages would otherwise be
+   * indexed as soft 404s — this is what tells a crawler they're not real pages.
+   */
+  noIndex?: boolean;
+}) {
   return (
     <>
       <title>{title}</title>
       {description ? <meta name="description" content={description} /> : null}
+      {noIndex ? <meta name="robots" content="noindex" /> : null}
     </>
   );
 }

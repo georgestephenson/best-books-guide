@@ -216,10 +216,16 @@ describe('SeriesPage', () => {
 });
 
 describe('NotFoundPage', () => {
-  it('renders a calm 404 with a way back', async () => {
+  it('renders a calm 404 with a way back, and keeps it out of the index', async () => {
     renderApp(<NotFoundPage />);
     expect(await screen.findByRole('heading', { name: /doesn.t exist/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /back to browse/i })).toHaveAttribute('href', '/');
+    // The SPA fallback answers unknown paths with a 200, so the tag is what stops a
+    // soft 404 being indexed.
+    expect(document.head.querySelector('meta[name="robots"]')).toHaveAttribute(
+      'content',
+      'noindex',
+    );
   });
 });
 
