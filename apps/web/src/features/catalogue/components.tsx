@@ -173,7 +173,9 @@ function UserMenu({
         </svg>
       </button>
       {open ? (
-        <div className="absolute right-0 z-10 mt-2 min-w-40 rounded-md border border-line bg-panel py-1 shadow-lg">
+        /* z-20 clears the home bookshelf: a fixed z-10 canvas overlay (App.tsx) that
+           otherwise wins on DOM order and draws its books over this panel. */
+        <div className="absolute right-0 z-20 mt-2 min-w-40 rounded-md border border-line bg-panel py-1 shadow-lg">
           {isAdmin ? (
             <Link
               className="block px-4 py-2 text-muted hover:bg-accent-wash hover:text-accent"
@@ -220,9 +222,10 @@ function ComingSoonSignIn() {
         Sign in
       </button>
       {open ? (
+        /* z-20 for the same reason as the user menu above: the bookshelf canvas. */
         <p
           role="status"
-          className="absolute right-0 z-10 mt-2 w-64 rounded-md border border-line bg-panel px-4 py-3 text-left text-muted shadow-lg"
+          className="absolute right-0 z-20 mt-2 w-64 rounded-md border border-line bg-panel px-4 py-3 text-left text-muted shadow-lg"
         >
           Coming soon! Reader accounts aren't open yet — the catalogue is free to read in the
           meantime.

@@ -420,7 +420,8 @@ function Bookshelf() {
   // overlay across the whole viewport so toppled books stay visible all the way down
   // the page. pointer-events-none keeps every link and button beneath it clickable.
   // touch-action: none on the strip lets a swipe over the shelf drive the books rather
-  // than being claimed for scrolling (the rest of the page scrolls as normal).
+  // than being claimed for scrolling (the rest of the page scrolls as normal). The
+  // overlay stays at z-10, below the header's popovers at z-20 (catalogue/components).
   return (
     <div
       ref={frameRef}
