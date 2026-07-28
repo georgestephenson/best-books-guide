@@ -24,6 +24,12 @@ function signedIn() {
   );
 }
 
+/** The `z-<n>` utility an element carries, as a number (0 when it declares none). */
+function layerOf(el: Element | null): number {
+  const match = /(?:^|\s)z-(\d+)(?:\s|$)/.exec(el?.className ?? '');
+  return match ? Number(match[1]) : 0;
+}
+
 const subjects: SubjectDetail[] = [
   {
     slug: 'fiction',
@@ -70,6 +76,21 @@ describe('App (catalogue home)', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
     expect(screen.getByText(/coming soon/i)).toBeInTheDocument();
+  });
+
+  it('opens the "coming soon" note above the bookshelf overlay', async () => {
+    vi.stubEnv('VITE_AUTH_UI', 'false');
+    server.use(http.get(`${API_BASE_PATH}/subjects`, () => HttpResponse.json(subjects)));
+    const { container } = renderApp(<App />);
+    await screen.findByRole('heading', { name: /what should you read next/i });
+
+    await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    // jsdom paints nothing and loads no Tailwind, so compare the layers the two
+    // elements declare: the shelf canvas overlays the page, the note overlays both.
+    // At an equal z-index the canvas wins on DOM order and hides the note.
+    const canvas = container.querySelector('[data-testid="bookshelf"]');
+    expect(layerOf(canvas)).toBeGreaterThan(0);
+    expect(layerOf(screen.getByRole('status'))).toBeGreaterThan(layerOf(canvas));
   });
 
   it('shows an empty state before any list is published', async () => {
