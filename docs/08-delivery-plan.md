@@ -65,7 +65,7 @@ The riskiest integrations, done while the app is trivial. App half first (verifi
 - Restore drill (DB from S3 to scratch), host-rebuild drill against RTO, load sanity (`autocannon` on hot pages; p95 < 300 ms at modest concurrency).
 - Content to launch bar (10+ subjects, ~100 books, blurbs written).
 - 404/500 pages, favicon/OG images, privacy page (what's stored; deletion by email request until self-serve ships).
-- Quiet **Support** page with a donate link (platform decision tracked in TODO.md; no ads, ever — [01](01-product.md) Principle 4).
+- Quiet **Support** page (`/support`) with a donate link — platform is **Ko-fi**; no ads, ever ([01](01-product.md) Principle 4). Reached from the footer's "reader-supported" on every page, and from a Ko-fi button at the foot of each finished list, where the reader has just been given something. The button is Ko-fi's own, rebuilt natively rather than dropped in as `Widget_2.js`: the widget draws itself with `document.writeln` (which blanks a SPA that has already mounted) and loads a script, an image, and a Google Fonts stylesheet from three third-party origins that `script-src 'self'` blocks and Principle 4 rules out. Ko-fi's logo is vendored into the app instead, so the donate button costs the CSP nothing and issues no third-party request.
 
 **Exit criteria**: [01 — Product](01-product.md) launch definition met. Announce.
 

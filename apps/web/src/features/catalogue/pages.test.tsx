@@ -17,6 +17,8 @@ import { ListPage } from './ListPage.js';
 import { BookPage } from './BookPage.js';
 import { SeriesPage } from './SeriesPage.js';
 import { NotFoundPage } from './NotFoundPage.js';
+import { SupportPage } from './SupportPage.js';
+import { KOFI_URL } from './support.js';
 
 const V1 = API_BASE_PATH;
 
@@ -176,6 +178,64 @@ describe('ListPage', () => {
     server.use(http.get(`${V1}/lists/ghost`, () => new HttpResponse(null, { status: 404 })));
     renderRoute('/lists/:slug', <ListPage />, '/lists/ghost');
     expect(await screen.findByText(/couldn't find that list/i)).toBeInTheDocument();
+  });
+
+  it('closes a finished list with the Ko-fi button and a route to the reasoning', async () => {
+    server.use(http.get(`${V1}/lists/best-fiction`, () => HttpResponse.json(listDetail)));
+    renderRoute('/lists/:slug', <ListPage />, '/lists/best-fiction');
+
+    // The button goes straight to Ko-fi — the ask lands where the value did.
+    expect(await screen.findByRole('link', { name: /support me on ko-fi/i })).toHaveAttribute(
+      'href',
+      KOFI_URL,
+    );
+    expect(
+      screen.getByRole('link', { name: /why this site is reader-supported/i }),
+    ).toHaveAttribute('href', '/support');
+  });
+
+  it('holds the support ask back on a list with nothing in it yet', async () => {
+    server.use(
+      http.get(`${V1}/lists/empty`, () =>
+        HttpResponse.json({ ...listDetail, slug: 'empty', items: [], sublists: [] }),
+      ),
+    );
+    renderRoute('/lists/:slug', <ListPage />, '/lists/empty');
+
+    expect(await screen.findByText(/still being assembled/i)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /support me on ko-fi/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('SupportPage', () => {
+  it('argues the reader-supported case and links out to Ko-fi', async () => {
+    renderApp(<SupportPage />);
+
+    expect(
+      await screen.findByRole('heading', { name: /no ads\. no trackers\./i, level: 1 }),
+    ).toBeInTheDocument();
+
+    // Ko-fi's own button, rebuilt natively: same wording and destination, but no
+    // third-party script/font/image request for the CSP to block (docs/01 Principle 4).
+    const kofi = screen.getByRole('link', { name: /support me on ko-fi/i });
+    expect(kofi).toHaveAttribute('href', 'https://ko-fi.com/gfste');
+    expect(kofi).toHaveAttribute('rel', expect.stringContaining('noopener'));
+    // The cup is decoration beside the label — out of the a11y tree, so the link reads
+    // as its text alone rather than announcing the logo twice.
+    expect(kofi.querySelector('img')).toHaveAttribute('alt', '');
+
+    expect(screen.getByText(/running the site/i)).toBeInTheDocument();
+    expect(document.title).toContain('Support Best Books Guide');
+  });
+});
+
+describe('PublicLayout', () => {
+  it('points the footer’s “reader-supported” at the support page', async () => {
+    renderApp(<NotFoundPage />);
+    expect(await screen.findByRole('link', { name: 'reader-supported' })).toHaveAttribute(
+      'href',
+      '/support',
+    );
   });
 });
 
