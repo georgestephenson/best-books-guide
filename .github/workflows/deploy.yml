@@ -34,12 +34,6 @@ jobs:
 
       - run: npm ci
       - run: npm run build
-        env:
-          # Hide the account entry points from anonymous visitors while SES is stuck in
-          # the sandbox and verification mail cannot reach a stranger's inbox. The auth
-          # routes stay live for the editor. Drop this once production access lands —
-          # apps/web/src/lib/featureFlags.ts, TODO.md.
-          VITE_AUTH_UI: 'false'
       - name: Prune to production dependencies
         run: npm prune --omit=dev
 

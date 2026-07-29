@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -12,7 +12,6 @@ import {
 } from '@bestbooks/shared';
 import { renderApp } from '../../test/render.js';
 import { server } from '../../test/server.js';
-import { useAuth } from '../auth/AuthContext.js';
 import { BookMemberPanel } from './BookMemberPanel.js';
 import { TrackButton } from './TrackButton.js';
 import { MyBooksPage } from './MyBooksPage.js';
@@ -40,16 +39,6 @@ function signedIn(overrides: Partial<{ role: 'member' | 'admin'; verified: boole
 
 const emptyViewer: ViewerBook = { status: null, startedOn: null, finishedOn: null, review: null };
 
-// Feature-flag stubs must never leak into the next test.
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
-
-/** Surfaces the auth status so a test can wait for the mount-time refresh to settle. */
-function AuthProbe() {
-  return <span>{useAuth().status}</span>;
-}
-
 describe('BookMemberPanel', () => {
   it('prompts anonymous visitors to sign in and shows reviews', async () => {
     server.use(
@@ -69,28 +58,6 @@ describe('BookMemberPanel', () => {
     renderApp(<BookMemberPanel slug="moby-dick" />);
     expect(await screen.findByText(/sign in/i)).toBeInTheDocument();
     expect(await screen.findByText('A towering book.')).toBeInTheDocument();
-  });
-
-  it('drops the sign-in prompt but keeps reviews when the auth UI flag is off', async () => {
-    vi.stubEnv('VITE_AUTH_UI', 'false');
-    server.use(
-      http.get(`${V1}/books/moby-dick/reviews`, () =>
-        HttpResponse.json([
-          {
-            id: 'r1',
-            rating: 5,
-            body: 'A towering book.',
-            displayName: 'Bob',
-            createdAt: '2026-07-01T00:00:00.000Z',
-            updatedAt: '2026-07-01T00:00:00.000Z',
-          } satisfies Review,
-        ]),
-      ),
-    );
-    renderApp(<BookMemberPanel slug="moby-dick" />);
-    // Reviews are public content and stay; only the account nudge goes.
-    expect(await screen.findByText('A towering book.')).toBeInTheDocument();
-    expect(screen.queryByText(/sign in/i)).not.toBeInTheDocument();
   });
 
   it('lets a verified member shelve a book', async () => {
@@ -260,20 +227,6 @@ describe('TrackButton', () => {
   it('nudges anonymous visitors to sign in', async () => {
     renderApp(<TrackButton slug="best-history" />);
     expect(await screen.findByText(/sign in/i)).toBeInTheDocument();
-  });
-
-  it('renders nothing for anonymous visitors when the auth UI flag is off', async () => {
-    vi.stubEnv('VITE_AUTH_UI', 'false');
-    renderApp(
-      <>
-        <AuthProbe />
-        <TrackButton slug="best-history" />
-      </>,
-    );
-    // Wait for the mount-time refresh to settle first: TrackButton also renders nothing
-    // while auth is loading, so asserting too early would pass even without the flag.
-    expect(await screen.findByText('anonymous')).toBeInTheDocument();
-    expect(screen.queryByText(/sign in/i)).not.toBeInTheDocument();
   });
 });
 

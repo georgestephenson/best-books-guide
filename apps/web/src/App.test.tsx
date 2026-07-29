@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -46,11 +46,6 @@ const subjects: SubjectDetail[] = [
   },
 ];
 
-// Feature-flag stubs must never leak into the next test.
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
-
 describe('App (catalogue home)', () => {
   it('renders subjects and their lists with a sign-in link', async () => {
     server.use(http.get(`${API_BASE_PATH}/subjects`, () => HttpResponse.json(subjects)));
@@ -66,31 +61,24 @@ describe('App (catalogue home)', () => {
     expect(screen.getByRole('link', { name: /sign in/i })).toBeInTheDocument();
   });
 
-  it('answers the header sign-in with "coming soon" when the auth UI flag is off', async () => {
-    vi.stubEnv('VITE_AUTH_UI', 'false');
-    server.use(http.get(`${API_BASE_PATH}/subjects`, () => HttpResponse.json(subjects)));
-    renderApp(<App />);
-    // The catalogue itself is unaffected — only the route to signup closes.
-    expect(await screen.findByRole('link', { name: 'Fiction' })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /sign in/i })).not.toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
-    expect(screen.getByText(/coming soon/i)).toBeInTheDocument();
-  });
-
-  it('opens the "coming soon" note above the bookshelf overlay', async () => {
-    vi.stubEnv('VITE_AUTH_UI', 'false');
-    server.use(http.get(`${API_BASE_PATH}/subjects`, () => HttpResponse.json(subjects)));
+  it('opens the user menu above the bookshelf overlay', async () => {
+    // A member who tracks no lists keeps the shelf, so the menu opens over it.
+    server.use(
+      signedIn(),
+      http.get(`${API_BASE_PATH}/subjects`, () => HttpResponse.json(subjects)),
+      http.get(`${API_BASE_PATH}/me/lists`, () => HttpResponse.json([])),
+    );
     const { container } = renderApp(<App />);
-    await screen.findByRole('heading', { name: /what should you read next/i });
 
-    await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /ada/i }));
     // jsdom paints nothing and loads no Tailwind, so compare the layers the two
-    // elements declare: the shelf canvas overlays the page, the note overlays both.
-    // At an equal z-index the canvas wins on DOM order and hides the note.
+    // elements declare: the shelf canvas overlays the page, the menu overlays both.
+    // At an equal z-index the canvas wins on DOM order and hides the menu.
     const canvas = container.querySelector('[data-testid="bookshelf"]');
     expect(layerOf(canvas)).toBeGreaterThan(0);
-    expect(layerOf(screen.getByRole('status'))).toBeGreaterThan(layerOf(canvas));
+    expect(
+      layerOf(screen.getByRole('button', { name: /sign out/i }).parentElement),
+    ).toBeGreaterThan(layerOf(canvas));
   });
 
   it('shows an empty state before any list is published', async () => {
