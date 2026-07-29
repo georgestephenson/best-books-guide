@@ -29,7 +29,6 @@ function robotsMeta() {
 }
 
 afterEach(() => {
-  vi.unstubAllEnvs();
   vi.restoreAllMocks(); // the reload test stubs window.location
 });
 
@@ -56,18 +55,6 @@ describe('PrivacyPage', () => {
 
     const link = await screen.findByRole('link', { name: /privacy@bestbooks\.guide/ });
     expect(link).toHaveAttribute('href', 'mailto:privacy@bestbooks.guide');
-  });
-
-  it('flags that accounts are not open yet only while the auth UI is held back', async () => {
-    vi.stubEnv('VITE_AUTH_UI', 'false');
-    const { unmount } = renderWithDataRouter([{ path: '/', element: <PrivacyPage /> }]);
-    expect(await screen.findByText(/aren.t open to the public yet/i)).toBeInTheDocument();
-    unmount();
-
-    vi.stubEnv('VITE_AUTH_UI', 'true');
-    renderWithDataRouter([{ path: '/', element: <PrivacyPage /> }]);
-    await screen.findByRole('heading', { name: 'Privacy', level: 1 });
-    expect(screen.queryByText(/aren.t open to the public yet/i)).not.toBeInTheDocument();
   });
 
   it('is indexable — unlike the error pages', async () => {

@@ -9,7 +9,6 @@ import {
 } from '@bestbooks/shared';
 import { useAuth } from '../auth/AuthContext.js';
 import { ApiError } from '../../lib/api.js';
-import { authUiEnabled } from '../../lib/featureFlags.js';
 import { catalogueKeys } from '../catalogue/api.js';
 import {
   deleteReview,
@@ -86,14 +85,14 @@ export function BookMemberPanel({ slug }: { slug: string }) {
             </>
           )}
         </div>
-      ) : authUiEnabled() ? (
+      ) : (
         <p className="rounded-lg border border-line bg-panel p-5 font-sans text-sm text-muted">
           <Link className="text-accent hover:underline" to="/login">
             Sign in
           </Link>{' '}
           to shelve this book, rate it, and write a review.
         </p>
-      ) : null}
+      )}
 
       <div className="mt-10">
         <h2 className="eyebrow mb-4">

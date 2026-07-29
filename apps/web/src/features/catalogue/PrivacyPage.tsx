@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
-import { authUiEnabled } from '../../lib/featureFlags.js';
 import { Crumbs, PageMeta, PublicLayout } from './components.js';
 
 /**
@@ -87,12 +86,6 @@ export function PrivacyPage() {
         </Section>
 
         <Section id="account" title="If you have an account">
-          {authUiEnabled() ? null : (
-            <p className="rounded-md border border-line bg-panel px-4 py-3 font-sans text-sm">
-              Reader accounts aren&rsquo;t open to the public yet. This section describes what an
-              account will store when they are.
-            </p>
-          )}
           <p>An account holds only what it takes to run one:</p>
           <Bullets
             items={[

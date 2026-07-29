@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { ApiError } from '../../lib/api.js';
-import { authUiEnabled } from '../../lib/featureFlags.js';
 import { useAuth } from '../auth/AuthContext.js';
 
 /**
@@ -107,11 +106,6 @@ export function Crumbs({ trail }: { trail: { label: string; to?: string }[] }) {
   );
 }
 
-/**
- * The signed-in reader's name, opening a menu with the account-level actions
- * (Admin, Sign out) — a disclosure so the nav stays uncluttered on mobile.
- * Closes on outside click, Escape, or choosing an item.
- */
 /** Popover open state that closes on Escape or a click outside the returned ref. */
 function useDismissablePopover() {
   const [open, setOpen] = useState(false);
@@ -136,6 +130,11 @@ function useDismissablePopover() {
   return { open, setOpen, ref };
 }
 
+/**
+ * The signed-in reader's name, opening a menu with the account-level actions
+ * (Admin, Sign out) — a disclosure so the nav stays uncluttered on mobile.
+ * Closes on outside click, Escape, or choosing an item.
+ */
 function UserMenu({
   displayName,
   isAdmin,
@@ -201,40 +200,6 @@ function UserMenu({
   );
 }
 
-/**
- * Stands in for the header "Sign in" link while accounts are held back
- * (`VITE_AUTH_UI=false` — see lib/featureFlags.ts). The entry point stays visible so
- * the site reads as finished, but it opens a plain "coming soon" note rather than a
- * signup the SES sandbox cannot complete.
- */
-function ComingSoonSignIn() {
-  const { open, setOpen, ref } = useDismissablePopover();
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        className="text-accent hover:underline"
-        aria-haspopup="true"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-      >
-        Sign in
-      </button>
-      {open ? (
-        /* z-20 for the same reason as the user menu above: the bookshelf canvas. */
-        <p
-          role="status"
-          className="absolute right-0 z-20 mt-2 w-64 rounded-md border border-line bg-panel px-4 py-3 text-left text-muted shadow-lg"
-        >
-          Coming soon! Reader accounts aren't open yet — the catalogue is free to read in the
-          meantime.
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
 function SiteHeader() {
   const { user, status, logout } = useAuth();
   return (
@@ -255,12 +220,10 @@ function SiteHeader() {
                 onSignOut={() => void logout()}
               />
             </>
-          ) : authUiEnabled() ? (
+          ) : (
             <Link className="text-accent hover:underline" to="/login">
               Sign in
             </Link>
-          ) : (
-            <ComingSoonSignIn />
           )}
         </nav>
       </div>
