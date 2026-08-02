@@ -32,7 +32,7 @@
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^19.5.0",
     "@eslint/js": "^10.0.1",
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.1.2",
     "@vitest/coverage-v8": "^4.1.10",
     "concurrently": "^9.0.0",
     "eslint": "^10.8.0",
